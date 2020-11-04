@@ -11,6 +11,12 @@
 #include <iostream>
 #include <fstream>
 
+// Helper function to index 2-dimensional arrays
+// Fortran order -> Column first
+constexpr int index(int dim0, int dim1, const int i0, const int i1) {
+    return i1 * dim0 + i0;
+};
+
 enum square
 {
     WALL = 4,
@@ -45,7 +51,8 @@ void dump (sokoban game)
     {
         for (int j = 0; j < game.dim.x; j++)
         {
-                printf ("%d ", game.map[i*game.dim.y+j]);
+                const auto board_idx = index(game.dim.x, game.dim.y, j, i);
+                printf ("%d ", game.map[board_idx]);
    /*         switch (game.map[i*game.dim.y+j])
             {
                 case FREE:
@@ -86,22 +93,26 @@ sokoban scan (std::string arg)
     }
     
 //    printf ("%d %d \n", sizeH, sizeV);
+//    result.map = (square*) calloc (sizeH * sizeV, sizeof (int));
 
-    result.map = (square*) calloc (sizeH*sizeV, sizeof (int));
+    result.map = new square[sizeH * sizeV];
     
-    for (int i = 0; i < sizeV; i++)
+    for (int y = 0; y < sizeV; y++)
     {
         //std::vector<square> tst;
-        for (int j = 0; j < sizeH; j++)
+        for (int x = 0; x < sizeH; x++)
         {
-	    int idx = j + i*sizeV;
-	    result.map [idx] = FREE;
+            const int idx = index(sizeH, sizeV, x, y);
+            result.map[idx] = FREE;
             //tst.push_back (FREE);
         }
         //result.map.push_back (tst);
     }
+
     result.dim.x = sizeH;
     result.dim.y = sizeV;
+
+    dump(result);
     
     int numOfWalls = 0;
     myfile >> numOfWalls;
@@ -114,7 +125,8 @@ sokoban scan (std::string arg)
         myfile >> y;
         myfile >> x;
   //      printf ("WALL: %d %d ", y, x);
-        result.map[(y-1)*sizeV+x-1] = WALL;
+        const int wall_idx = index(sizeH, sizeV, x - 1, y - 1);
+        result.map[wall_idx] = WALL;
     }
 
 //dump(result);
@@ -139,8 +151,10 @@ dump(result);
         tmp.x = x-1;
 	//bxs[i] = tmp;
 	//result.boxes [i] = tmp;
+
+        const int box_idx = index(sizeH, sizeV, x - 1, y - 1);
         result.boxes.push_back (tmp);
-        result.map[(y-1)*sizeV+x-1] = square(1);//BOX;
+        result.map[box_idx] = square(1);//BOX;
   //      printf ("@@@BOX: %d ", result.map[(y-1)*sizeV+x-1]);
     }
     //result.boxes = (pos*) malloc (result.numOfBoxes*2* sizeof (int));
@@ -156,20 +170,27 @@ dump(result);
         myfile >> y;
         myfile >> x;
 //        printf ("TARGET: %d %d ", y, x);
-        result.map[(y-1)*sizeV+x-1] = square(3);//TARGET;
+        const int target_idx = index(sizeH, sizeV, x - 1, y - 1);
+        result.map[target_idx] = square(3);//TARGET;
 //        printf ("@@@!!! TARGET: %d ", result.map[(y-1)*sizeV+x-1]);
     }
     
-//dump(result);
+dump(result);
 
     int player_x = 0, player_y = 0;
     myfile >> player_y >> player_x;
 //    printf ("\n%d %d \n", player_y, player_x);
     result.player.x = player_x-1;
     result.player.y = player_y-1;
-    result.map[(player_y-1)*sizeV+player_x-1] = PLAYER;
-    
+
+    const int player_idx = index(sizeH, sizeV, result.player.x, result.player.y);
+    result.map[player_idx] = PLAYER;
+
+    dump(result);
+
     return result;
+
+
 }
 
 bool isValid (sokoban current, pos move)
@@ -289,7 +310,7 @@ sokoban makeMove (sokoban* current, char move)
 int main(int argc, const char * argv[])
 {
    // printf ("TTT\n");
-    std::string input = "input.txt";
+    std::string input = "sokoban00.txt";
     if (argc >= 2)
     {
         input = std::string (argv[1]);
