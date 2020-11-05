@@ -19,6 +19,7 @@ constexpr int index(int dim0, int dim1, const int i0, const int i1) {
 
 enum square
 {
+    ACQUIRED = 5,
     WALL = 4,
     TARGET = 3,
     PLAYER = 2,
@@ -34,11 +35,9 @@ typedef struct pos
 
 typedef struct sokoban
 {
-    /*std::vector <std::vector <square> > */
     int numOfBoxes;
     pos player;
     pos dim;
-    /*pos*  boxes;*/
     square* map;
     std::vector <pos> boxes;
 } sokoban;
@@ -52,8 +51,8 @@ void dump (sokoban game)
         for (int j = 0; j < game.dim.x; j++)
         {
                 const auto board_idx = index(game.dim.x, game.dim.y, j, i);
-                printf ("%d ", game.map[board_idx]);
-   /*         switch (game.map[i*game.dim.y+j])
+ //               printf ("%d ", game.map[board_idx]);
+            switch (game.map[board_idx])
             {
                 case FREE:
                     printf (" ");
@@ -70,11 +69,14 @@ void dump (sokoban game)
                 case WALL:
                     printf ("#");
                     break;
+		case ACQUIRED:
+		    printf ("*");
+		    break;
                 default:
                     printf ("!!!!!");
                     break;
             }
-     */   }
+        }
         printf ("\n");
     }
 }
@@ -92,155 +94,108 @@ sokoban scan (std::string arg)
         myfile >> sizeV;
     }
     
-//    printf ("%d %d \n", sizeH, sizeV);
-//    result.map = (square*) calloc (sizeH * sizeV, sizeof (int));
-
     result.map = new square[sizeH * sizeV];
     
     for (int y = 0; y < sizeV; y++)
     {
-        //std::vector<square> tst;
         for (int x = 0; x < sizeH; x++)
         {
-            const int idx = index(sizeH, sizeV, x, y);
+            const int idx = index (sizeH, sizeV, x, y);
             result.map[idx] = FREE;
-            //tst.push_back (FREE);
         }
-        //result.map.push_back (tst);
     }
 
     result.dim.x = sizeH;
     result.dim.y = sizeV;
 
-    dump(result);
-    
     int numOfWalls = 0;
     myfile >> numOfWalls;
-    
-//    printf ("\n%d\n", numOfWalls);
     
     for (int i = 0; i < numOfWalls; i++)
     {
         int x = 0, y = 0;
         myfile >> y;
         myfile >> x;
-  //      printf ("WALL: %d %d ", y, x);
-        const int wall_idx = index(sizeH, sizeV, x - 1, y - 1);
+        const int wall_idx = index (sizeH, sizeV, x - 1, y - 1);
         result.map[wall_idx] = WALL;
     }
 
-//dump(result);
-//printf ("BOXES!!!\n");    
-
-    //int numOfBoxes = 0;
     myfile >> result.numOfBoxes;
-    //pos* bxs = (pos*) calloc (result.numOfBoxes, 2*sizeof (int));
-    //result.boxes = (pos*) calloc (result.numOfBoxes, sizeof (pos));
 
-dump(result);
-
-//    printf ("\n%d\n", numOfBoxes);
     for (int i = 0; i < result.numOfBoxes; i++)
     {
         int x = 0, y = 0;
         myfile >> y;
         myfile >> x;
-  //      printf ("%d %d ", y, x);
         pos tmp;
         tmp.y = y-1;
         tmp.x = x-1;
-	//bxs[i] = tmp;
-	//result.boxes [i] = tmp;
 
-        const int box_idx = index(sizeH, sizeV, x - 1, y - 1);
+        const int box_idx = index (sizeH, sizeV, x - 1, y - 1);
         result.boxes.push_back (tmp);
-        result.map[box_idx] = square(1);//BOX;
-  //      printf ("@@@BOX: %d ", result.map[(y-1)*sizeV+x-1]);
+        result.map[box_idx] = BOX;
     }
-    //result.boxes = (pos*) malloc (result.numOfBoxes*2* sizeof (int));
-    //memcpy (result.boxes, bxs, 2*sizeof(int));// = 
-dump(result);
 
     int numOfTargets = 0;
     myfile >> numOfTargets;
-//    printf ("\n%d\n", numOfTargets);
     for (int i = 0; i < numOfTargets; i++)
     {
         int x = 0, y = 0;
         myfile >> y;
         myfile >> x;
-//        printf ("TARGET: %d %d ", y, x);
-        const int target_idx = index(sizeH, sizeV, x - 1, y - 1);
-        result.map[target_idx] = square(3);//TARGET;
-//        printf ("@@@!!! TARGET: %d ", result.map[(y-1)*sizeV+x-1]);
+        const int target_idx = index (sizeH, sizeV, x - 1, y - 1);
+        result.map[target_idx] = TARGET;
     }
     
-dump(result);
-
     int player_x = 0, player_y = 0;
     myfile >> player_y >> player_x;
-//    printf ("\n%d %d \n", player_y, player_x);
     result.player.x = player_x-1;
     result.player.y = player_y-1;
 
-    const int player_idx = index(sizeH, sizeV, result.player.x, result.player.y);
+    const int player_idx = index (sizeH, sizeV, result.player.x, result.player.y);
     result.map[player_idx] = PLAYER;
 
-    dump(result);
-
     return result;
-
-
 }
 
 bool isValid (sokoban current, pos move)
 {
     if (move.y >= 0 and move.x < current.dim.x and move.y >= 0 and move.y < current.dim.y)
     {
-     
-  //      printf ("is Valid\n");
-//        printf ("%d %d: %d\n", move.y, move.x, current.map[move.y*current.dim.y+move.x]);
-        return (current.map[move.y*current.dim.y+move.x] != WALL);
+        return (current.map[index (current.dim.x, current.dim.y, move.x, move.y)] != WALL); 
     }
     else
     {
-        
- //       printf ("NOT Valid\n");
         return false;
     }
 }
 
 bool hasBox (sokoban current, pos box)
 {
-    
-    return (current.map[box.y*current.dim.y+box.x] == BOX);
+    return (current.map[index (current.dim.x, current.dim.y, box.x, box.y)] == BOX);
 }
 
-sokoban makeMove (sokoban* current, char move)
+void makeMove (const sokoban* current, char move, sokoban* output)
 {
     sokoban result = *current;
     pos toMove;
     switch (move)
     {
         case 'U':
-            toMove.x = 0;// result.player.x;
-            toMove.y = -1;// result.player.y-1;
-   //         printf ("up\n");
+            toMove.x = 0;
+            toMove.y = -1;
             break;
         case 'D':
-            toMove.x = 0;// result.player.x;
-            toMove.y = 1;// result.player.y+1;
-     //       printf ("down\n");
+            toMove.x = 0;
+            toMove.y = 1;
             break;
         case 'L':
-            toMove.x = -1;// result.player.x-1;
-            toMove.y = 0;// result.player.y;
-     //       printf ("left\n");
+            toMove.x = -1;
+            toMove.y = 0;
             break;
         case 'R':
-            toMove.x = 1;// result.player.x+1;
-            toMove.y = 0;// result.player.y;
-    //        printf ("right\n");
+            toMove.x = 1;
+            toMove.y = 0;
             break;
         default:
             printf ("Error on makeMove function!");
@@ -251,10 +206,8 @@ sokoban makeMove (sokoban* current, char move)
     madeMove.x = result.player.x + toMove.x;
     madeMove.y = result.player.y + toMove.y;
 	
-//	printf ("%d %d \n", madeMove.x, madeMove.y);
     if (isValid (*current, madeMove))
     {
-  //      printf ("MOVE VALID\n");
         if (hasBox (*current, madeMove))
         {
             pos boxMove;
@@ -262,72 +215,48 @@ sokoban makeMove (sokoban* current, char move)
             boxMove.y = madeMove.y + toMove.y;
             if (isValid (*current, boxMove) && !hasBox (*current, boxMove))
             {
-//		printf ("MOVING box \n");
 		for (int i = 0; i < result.numOfBoxes; i++)
 		{
-			auto it = result.boxes[i];/*
-                for (auto it = result.boxes.begin(); it != result.boxes.end(); it++)
-                {*/
+		    auto it = result.boxes[i];
                     if (it.x == madeMove.x && it.y == madeMove.y)
                     {
-                        it = boxMove;
-                        result.map [result.player.y*result.dim.y+result.player.x] = FREE;
-                        result.map [madeMove.y*result.dim.y+madeMove.x] = PLAYER;
-                        result.map [boxMove.y*result.dim.y+boxMove.x] = BOX;
+                        result.boxes[i] = boxMove;
+                        result.map [index (result.dim.x, result.dim.y, result.player.x, result.player.y)] = FREE;
+                        result.map [index (result.dim.x, result.dim.y, madeMove.x, madeMove.y)] = PLAYER;
+                        result.map [index (result.dim.x, result.dim.y, boxMove.x, boxMove.y)] = BOX;
                         
-                            result.player.x = madeMove.x;
-                            result.player.y = madeMove.y;
-                        //result.map[it->y][it->x]
+			result.player.x = madeMove.x;
+                        result.player.y = madeMove.y;
                     }
-                }/*
-                                for (int i = 0; i < nboxes; i++)
-                                {
-                                    if (get_x(s.boxes[i]) == x and get_y(s.boxes[i]) == y)
-                                    {
-                                        s.boxes[i] = get_pos(bx, by);
-                                        break;
-                                    }
-                                }*/
+                }
             }
         }
         else
         {
-            result.map [result.player.y*result.dim.y+result.player.x] = FREE;
-            result.map [madeMove.y*result.dim.y+madeMove.x] = PLAYER;
-            result.player.x = madeMove.x;
-            result.player.y = madeMove.y;
+            result.map [index (result.dim.x, result.dim.y, result.player.x, result.player.y)] = FREE;
+            result.map [index (result.dim.x, result.dim.y, madeMove.x, madeMove.y)] = PLAYER;
             
+	    result.player.x = madeMove.x;
+            result.player.y = madeMove.y;
         }
     }
-    else
-    {
-                printf ("@@@@INVALID\n");
-    }
-//dump (result);   
-    return result;
+	*output = result;
+    //return result;
 }
 
 int main(int argc, const char * argv[])
 {
-   // printf ("TTT\n");
     std::string input = "sokoban00.txt";
     if (argc >= 2)
     {
         input = std::string (argv[1]);
     }
     
-    //printf ("getting input\n");
-    
     sokoban body = scan (input);
     
-    //printf ("scanning sokoban\n");
+    dump (body);
     
-  //  dump (body);
+    makeMove (&body, 'L', &body);
     
-    body = makeMove (&body, 'D');
-    
- //   dump (body);
-    
- //   printf ("made move \n");
-    
+    dump (body);
 }
