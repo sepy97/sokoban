@@ -10,6 +10,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <algorithm>
 
 // Helper function to index 2-dimensional arrays
 // Fortran order -> Column first
@@ -40,6 +41,8 @@ typedef struct sokoban
     pos dim;
     square* map;
     std::vector <pos> boxes;
+    std::vector <pos> targets;
+   // int numTargets;
 } sokoban;
 
 void dump (sokoban game)
@@ -69,9 +72,9 @@ void dump (sokoban game)
                 case WALL:
                     printf ("#");
                     break;
-		case ACQUIRED:
-		    printf ("*");
-		    break;
+                case ACQUIRED:
+                    printf ("*");
+                    break;
                 default:
                     printf ("!!!!!");
                     break;
@@ -138,15 +141,22 @@ sokoban scan (std::string arg)
 
     int numOfTargets = 0;
     myfile >> numOfTargets;
+   // result.numTargets = numOfTargets;
     for (int i = 0; i < numOfTargets; i++)
     {
         int x = 0, y = 0;
         myfile >> y;
         myfile >> x;
+        pos tmp;
+        tmp.y = y-1;
+        tmp.x = x-1;
+        result.targets.push_back (tmp);
+
         const int target_idx = index (sizeH, sizeV, x - 1, y - 1);
+    //    if (result.map[target_idx] == BOX) result.numTargets--;
         result.map[target_idx] = TARGET;
     }
-    
+        
     int player_x = 0, player_y = 0;
     myfile >> player_y >> player_x;
     result.player.x = player_x-1;
@@ -172,10 +182,10 @@ bool isValid (sokoban current, pos move)
 
 bool hasBox (sokoban current, pos box)
 {
-    return (current.map[index (current.dim.x, current.dim.y, box.x, box.y)] == BOX);
+    return (current.map[index (current.dim.x, current.dim.y, box.x, box.y)] == BOX);// || current.map[index (current.dim.x, current.dim.y, box.x, box.y) == ACQUIRED);
 }
 
-void makeMove (const sokoban* current, char move, sokoban* output)
+bool makeMove (const sokoban* current, char move, sokoban* output)
 {
     sokoban result = *current;
     pos toMove;
@@ -215,17 +225,46 @@ void makeMove (const sokoban* current, char move, sokoban* output)
             boxMove.y = madeMove.y + toMove.y;
             if (isValid (*current, boxMove) && !hasBox (*current, boxMove))
             {
-		for (int i = 0; i < result.numOfBoxes; i++)
-		{
-		    auto it = result.boxes[i];
+                for (int i = 0; i < result.numOfBoxes; i++)
+                {
+                    auto it = result.boxes[i];
                     if (it.x == madeMove.x && it.y == madeMove.y)
                     {
-                        result.boxes[i] = boxMove;
-                        result.map [index (result.dim.x, result.dim.y, result.player.x, result.player.y)] = FREE;
-                        result.map [index (result.dim.x, result.dim.y, madeMove.x, madeMove.y)] = PLAYER;
-                        result.map [index (result.dim.x, result.dim.y, boxMove.x, boxMove.y)] = BOX;
-                        
-			result.player.x = madeMove.x;
+                        if (result.map [index (result.dim.x, result.dim.y, madeMove.x, madeMove.y)] == BOX)
+                        {
+                            result.boxes[i] = boxMove;
+                            result.map [index (result.dim.x, result.dim.y, result.player.x, result.player.y)] = FREE;
+                            result.map [index (result.dim.x, result.dim.y, madeMove.x, madeMove.y)] = PLAYER;
+                            result.map [index (result.dim.x, result.dim.y, boxMove.x, boxMove.y)] = BOX;
+                
+                            pos plyr, mdmv, bxmv;
+                            plyr.x = result.player.x;
+                            plyr.y = result.player.y;
+                            mdmv.x = madeMove.x;
+                            mdmv.y = madeMove.y;
+                            bxmv.x = boxMove.x;
+                            bxmv.y = boxMove.y;
+
+                            /*
+                            if (std::find (result.targets.begin(), result.targets.end(), plyr) != result.targets.end ())
+                            {
+                                result.map [index (result.dim.x, result.dim.y, result.player.x, result.player.y)] = TARGET;
+                            }
+                            
+                            if (std::find (result.targets.begin(), result.targets.end(), mdmv) != result.targets.end ())
+                            {
+                                result.numTargets++;
+                            }
+
+                            if (std::find (result.targets.begin(), result.targets.end(), bxmv) != result.targets.end ())
+                            {
+                                result.numTargets--;
+                            }
+                            */
+
+                        }
+                                
+                        result.player.x = madeMove.x;
                         result.player.y = madeMove.y;
                     }
                 }
@@ -235,13 +274,29 @@ void makeMove (const sokoban* current, char move, sokoban* output)
         {
             result.map [index (result.dim.x, result.dim.y, result.player.x, result.player.y)] = FREE;
             result.map [index (result.dim.x, result.dim.y, madeMove.x, madeMove.y)] = PLAYER;
-            
-	    result.player.x = madeMove.x;
+            pos plyr;
+            plyr.x = result.player.x;
+            plyr.y = result.player.y;
+                
+            /*if (std::find (result.targets.begin(), result.targets.end(), plyr) != result.targets.end ())
+            {
+                result.map [index (result.dim.x, result.dim.y, result.player.x, result.player.y)] = TARGET;
+            }*/
+		    
+
+            result.player.x = madeMove.x;
             result.player.y = madeMove.y;
         }
     }
 	*output = result;
-    //return result;
+
+    for (int i = 0; i < result.targets.size(); i++)
+    {
+        if (result.map [index (result.dim.x, result.dim.y, result.targets[i].x, result.targets[i].y)] != BOX) return false;
+    }
+    return true;
+    //return (result.numTargets == 0);
+    //return false;
 }
 
 int main(int argc, const char * argv[])
@@ -256,7 +311,9 @@ int main(int argc, const char * argv[])
     
     dump (body);
     
-    makeMove (&body, 'L', &body);
+    bool finished = makeMove (&body, 'D', &body);
     
     dump (body);
+    
+    std::cout << "Game is finished? " << finished << std::endl;
 }
