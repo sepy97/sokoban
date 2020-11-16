@@ -1,15 +1,15 @@
 # cython: language_level=3, boundscheck=False, wraparound=False, overflowcheck=False, cdivision=True, initializedcheck=False, binding=False, embedsignature=True
 
+from cython.operator cimport dereference as deref
+
 from libc.stdlib cimport malloc, free
+from libc.stdint cimport int64_t
+
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 from libcpp cimport bool
 
 import numpy as np
-cimport numpy as np
-
-from cpython.array cimport array, clone
-
 
 cdef extern from "sokoban.h":
     cdef enum square:
@@ -32,15 +32,18 @@ cdef extern from "sokoban.h":
         vector[pos] boxes
         vector[pos] targets
 
-    cdef bool makeMove(const sokoban* current, char move, sokoban* output)
-    void dump (sokoban game)
+    sokoban* blank_state()
+    void delete_state(sokoban* state)
+
+    void dump (const sokoban& game)
     sokoban* scan(const string& arg)
+    cdef bool makeMove(const sokoban* current, char move, sokoban* output)
 
 
 cdef class SokobanState:
     """A wrapper class for a C/C++ data structure"""
     cdef sokoban *_state
-    cdef np.int64_t[:, ::1] _state_buffer
+    cdef int64_t[:, ::1] _state_buffer
 
     cdef bool ptr_owner
     cdef int size_x
@@ -52,8 +55,11 @@ cdef class SokobanState:
     def __dealloc__(self):
         # De-allocate if not null and flag is set
         if self._state is not NULL and self.ptr_owner is True:
-            free(self._state)
+            delete_state(self._state)
             self._state = NULL
+
+    cpdef display(self):
+        dump(deref(self._state))
 
     # Extension class properties
     @property
@@ -72,7 +78,7 @@ cdef class SokobanState:
 
         # This is a little bit sketchy, because we are coercing the enum into an int64_t
         # However, we define the enum to be an int64_t in the header file so its probably fine...
-        wrapper._state_buffer = <np.int64_t[:wrapper.size_y, :wrapper.size_x]> <np.int64_t*> _state.map.data()
+        wrapper._state_buffer = <int64_t[:wrapper.size_y, :wrapper.size_x]> <int64_t*> _state.map.data()
 
         wrapper.ptr_owner = owner
         return wrapper
@@ -90,12 +96,12 @@ cdef char action_to_string(int action):
 
 cpdef SokobanState load_state(str filepath):
     cdef sokoban* state = scan(filepath.encode('UTF-8'))
-    return SokobanState.from_state(state, True)
+    return SokobanState.from_state(state)
 
 cpdef SokobanState next_state(SokobanState state, int action):
     cdef char move = action_to_string(action)
-    cdef sokoban *output = <sokoban *>malloc(sizeof(sokoban))
+    cdef sokoban *output = blank_state();
 
     cdef bool result = makeMove(state._state, move, output)
 
-    return SokobanState.from_state(output, True)
+    return SokobanState.from_state(output)

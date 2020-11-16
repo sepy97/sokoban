@@ -14,6 +14,16 @@ constexpr int index(const int dim0, const int dim1, const int i0, const int i1) 
     return i1 * dim0 + i0;
 };
 
+// Dummy function that is necessary to dynamically create the sokoban struct from python.
+sokoban* blank_state() {
+    return new sokoban;
+}
+
+// Dummy function that is necessary to clean up struct memory from python.
+void delete_state(sokoban* state) {
+    delete state;
+}
+
 void dump (const sokoban& game)
 {
     printf ("Sokoban: \nPlayer: %d %d\nDimensions of the map: %d %d\nMap: \n", \
@@ -111,7 +121,7 @@ sokoban* scan (const std::string& arg)
 
     int numOfTargets = 0;
     myfile >> numOfTargets;
-   // result.numTargets = numOfTargets;
+   // output->numTargets = numOfTargets;
     for (int i = 0; i < numOfTargets; i++)
     {
         int x = 0, y = 0;
@@ -123,7 +133,7 @@ sokoban* scan (const std::string& arg)
         result->targets.push_back (tmp);
 
         const int target_idx = index (sizeH, sizeV, x - 1, y - 1);
-    //    if (result.map[target_idx] == BOX) result.numTargets--;
+    //    if (output->map[target_idx] == BOX) output->numTargets--;
         result->map[target_idx] = TARGET;
     }
         
@@ -157,7 +167,12 @@ bool hasBox (sokoban current, pos box)
 
 bool makeMove (const sokoban* const current, char move, sokoban* output)
 {
-    sokoban result = *current;
+    if (output == nullptr) {
+        output = blank_state();
+    }
+
+    *output = *current;
+
     pos toMove;
     switch (move)
     {
@@ -183,8 +198,8 @@ bool makeMove (const sokoban* const current, char move, sokoban* output)
     }
     
     pos madeMove;
-    madeMove.x = result.player.x + toMove.x;
-    madeMove.y = result.player.y + toMove.y;
+    madeMove.x = output->player.x + toMove.x;
+    madeMove.y = output->player.y + toMove.y;
 	
     if (isValid (*current, madeMove))
     {
@@ -195,77 +210,77 @@ bool makeMove (const sokoban* const current, char move, sokoban* output)
             boxMove.y = madeMove.y + toMove.y;
             if (isValid (*current, boxMove) && !hasBox (*current, boxMove))
             {
-                for (int i = 0; i < result.numOfBoxes; i++)
+                for (int i = 0; i < output->numOfBoxes; i++)
                 {
-                    auto it = result.boxes[i];
+                    auto it = output->boxes[i];
                     if (it.x == madeMove.x && it.y == madeMove.y)
                     {
-                        if (result.map [index (result.dim.x, result.dim.y, madeMove.x, madeMove.y)] == BOX)
+                        if (output->map [index (output->dim.x, output->dim.y, madeMove.x, madeMove.y)] == BOX)
                         {
-                            result.boxes[i] = boxMove;
-                            result.map [index (result.dim.x, result.dim.y, result.player.x, result.player.y)] = FREE;
-                            result.map [index (result.dim.x, result.dim.y, madeMove.x, madeMove.y)] = PLAYER;
-                            result.map [index (result.dim.x, result.dim.y, boxMove.x, boxMove.y)] = BOX;
+                            output->boxes[i] = boxMove;
+                            output->map [index (output->dim.x, output->dim.y, output->player.x, output->player.y)] = FREE;
+                            output->map [index (output->dim.x, output->dim.y, madeMove.x, madeMove.y)] = PLAYER;
+                            output->map [index (output->dim.x, output->dim.y, boxMove.x, boxMove.y)] = BOX;
                 
                             pos plyr, mdmv, bxmv;
-                            plyr.x = result.player.x;
-                            plyr.y = result.player.y;
+                            plyr.x = output->player.x;
+                            plyr.y = output->player.y;
                             mdmv.x = madeMove.x;
                             mdmv.y = madeMove.y;
                             bxmv.x = boxMove.x;
                             bxmv.y = boxMove.y;
 
                             /*
-                            if (std::find (result.targets.begin(), result.targets.end(), plyr) != result.targets.end ())
+                            if (std::find (output->targets.begin(), output->targets.end(), plyr) != output->targets.end ())
                             {
-                                result.map [index (result.dim.x, result.dim.y, result.player.x, result.player.y)] = TARGET;
+                                output->map [index (output->dim.x, output->dim.y, output->player.x, output->player.y)] = TARGET;
                             }
                             
-                            if (std::find (result.targets.begin(), result.targets.end(), mdmv) != result.targets.end ())
+                            if (std::find (output->targets.begin(), output->targets.end(), mdmv) != output->targets.end ())
                             {
-                                result.numTargets++;
+                                output->numTargets++;
                             }
 
-                            if (std::find (result.targets.begin(), result.targets.end(), bxmv) != result.targets.end ())
+                            if (std::find (output->targets.begin(), output->targets.end(), bxmv) != output->targets.end ())
                             {
-                                result.numTargets--;
+                                output->numTargets--;
                             }
                             */
 
                         }
                                 
-                        result.player.x = madeMove.x;
-                        result.player.y = madeMove.y;
+                        output->player.x = madeMove.x;
+                        output->player.y = madeMove.y;
                     }
                 }
             }
         }
         else
         {
-            result.map [index (result.dim.x, result.dim.y, result.player.x, result.player.y)] = FREE;
-            result.map [index (result.dim.x, result.dim.y, madeMove.x, madeMove.y)] = PLAYER;
+            output->map [index (output->dim.x, output->dim.y, output->player.x, output->player.y)] = FREE;
+            output->map [index (output->dim.x, output->dim.y, madeMove.x, madeMove.y)] = PLAYER;
             pos plyr;
-            plyr.x = result.player.x;
-            plyr.y = result.player.y;
+            plyr.x = output->player.x;
+            plyr.y = output->player.y;
                 
-            /*if (std::find (result.targets.begin(), result.targets.end(), plyr) != result.targets.end ())
+            /*if (std::find (output->targets.begin(), output->targets.end(), plyr) != output->targets.end ())
             {
-                result.map [index (result.dim.x, result.dim.y, result.player.x, result.player.y)] = TARGET;
+                output->map [index (output->dim.x, output->dim.y, output->player.x, output->player.y)] = TARGET;
             }*/
 		    
 
-            result.player.x = madeMove.x;
-            result.player.y = madeMove.y;
+            output->player.x = madeMove.x;
+            output->player.y = madeMove.y;
         }
     }
 
-	*output = result;
+	// *output = result;
 
-    for (int i = 0; i < result.targets.size(); i++)
+    for (int i = 0; i < output->targets.size(); i++)
     {
-        if (result.map [index (result.dim.x, result.dim.y, result.targets[i].x, result.targets[i].y)] != BOX) return false;
+        if (output->map [index (output->dim.x, output->dim.y, output->targets[i].x, output->targets[i].y)] != BOX) return false;
     }
     return true;
-    //return (result.numTargets == 0);
+    //return (output->numTargets == 0);
     //return false;
 }

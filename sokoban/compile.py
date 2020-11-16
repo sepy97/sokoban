@@ -3,13 +3,9 @@ from distutils.extension import Extension
 from Cython.Distutils import build_ext
 from Cython.Build import cythonize
 
-from numpy import get_include
-import os
-
 ext = [
        Extension("sokoban_interface", ["sokoban_interface.pyx", "sokoban.cpp"],
-                 include_dirs=[get_include()],
-                 extra_compile_args=["-Ofast", "-march=native", "-std=c++14", '-funroll-loops'],
+                 extra_compile_args=["-O2", "-march=native", "-std=c++14"],
                  # extra_link_args=['-fopenmp']
                  language="c++")
        ]

@@ -32,7 +32,10 @@ typedef struct sokoban
 } sokoban;
 
 
-void dump (sokoban game);
+sokoban* blank_state();
+void delete_state(sokoban* state);
+
+void dump (const sokoban& game);
 sokoban* scan (const std::string& arg);
 bool makeMove (const sokoban* current, char move, sokoban* output);
 

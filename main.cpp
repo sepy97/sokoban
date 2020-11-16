@@ -18,12 +18,17 @@ int main(int argc, const char * argv[])
     }
     
     sokoban* body = scan (input);
+    sokoban* output = blank_state();
     
     dump (*body);
     
-    bool finished = makeMove (body, 'D', body);
+    bool finished = makeMove (body, 'D', output);
     
+    dump (*output);
     dump (*body);
     
     std::cout << "Game is finished? " << finished << std::endl;
+
+    delete body;
+    delete output;
 }
