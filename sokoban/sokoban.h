@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 
-enum square : int64_t
+enum square : uint8_t
 {
     ACQUIRED = 5,
     WALL = 4,
@@ -32,7 +32,7 @@ typedef struct sokoban
 } sokoban;
 
 
-sokoban* blank_state();
+sokoban* new_state();
 void delete_state(sokoban* state);
 
 void dump (const sokoban& game);

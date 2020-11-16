@@ -18,7 +18,7 @@ int main(int argc, const char * argv[])
     }
     
     sokoban* body = scan (input);
-    sokoban* output = blank_state();
+    sokoban* output = new_state();
     
     dump (*body);
     

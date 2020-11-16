@@ -15,7 +15,7 @@ constexpr int index(const int dim0, const int dim1, const int i0, const int i1) 
 };
 
 // Dummy function that is necessary to dynamically create the sokoban struct from python.
-sokoban* blank_state() {
+sokoban* new_state() {
     return new sokoban;
 }
 
@@ -168,7 +168,7 @@ bool hasBox (sokoban current, pos box)
 bool makeMove (const sokoban* const current, char move, sokoban* output)
 {
     if (output == nullptr) {
-        output = blank_state();
+        output = new_state();
     }
 
     *output = *current;

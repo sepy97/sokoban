@@ -3,7 +3,7 @@
 from cython.operator cimport dereference as deref
 
 from libc.stdlib cimport malloc, free
-from libc.stdint cimport int64_t
+from libc.stdint cimport uint8_t
 
 from libcpp.vector cimport vector
 from libcpp.string cimport string
@@ -32,7 +32,7 @@ cdef extern from "sokoban.h":
         vector[pos] boxes
         vector[pos] targets
 
-    sokoban* blank_state()
+    sokoban* new_state()
     void delete_state(sokoban* state)
 
     void dump (const sokoban& game)
@@ -43,7 +43,7 @@ cdef extern from "sokoban.h":
 cdef class SokobanState:
     """A wrapper class for a C/C++ data structure"""
     cdef sokoban *_state
-    cdef int64_t[:, ::1] _state_buffer
+    cdef uint8_t[:, ::1] _state_buffer
 
     cdef bool ptr_owner
     cdef int size_x
@@ -76,9 +76,9 @@ cdef class SokobanState:
         wrapper.size_x = _state.dim.x
         wrapper.size_y = _state.dim.y
 
-        # This is a little bit sketchy, because we are coercing the enum into an int64_t
-        # However, we define the enum to be an int64_t in the header file so its probably fine...
-        wrapper._state_buffer = <int64_t[:wrapper.size_y, :wrapper.size_x]> <int64_t*> _state.map.data()
+        # This is a little bit sketchy, because we are coercing the enum into an uint8_t
+        # However, we define the enum to be an uint8_t in the header file so its probably fine...
+        wrapper._state_buffer = <uint8_t[:wrapper.size_y, :wrapper.size_x]> <uint8_t*> _state.map.data()
 
         wrapper.ptr_owner = owner
         return wrapper
@@ -100,7 +100,7 @@ cpdef SokobanState load_state(str filepath):
 
 cpdef SokobanState next_state(SokobanState state, int action):
     cdef char move = action_to_string(action)
-    cdef sokoban *output = blank_state();
+    cdef sokoban *output = new_state();
 
     cdef bool result = makeMove(state._state, move, output)
 
