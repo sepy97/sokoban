@@ -7,7 +7,7 @@
 
 #include <iostream>
 
-#include "sokoban.h"
+#include "./sokoban/sokoban.h"
 
 int main(int argc, const char * argv[])
 {
@@ -17,13 +17,13 @@ int main(int argc, const char * argv[])
         input = std::string (argv[1]);
     }
     
-    sokoban body = scan (input);
+    sokoban* body = scan (input);
     
-    dump (body);
+    dump (*body);
     
-    bool finished = makeMove (&body, 'D', &body);
+    bool finished = makeMove (body, 'D', body);
     
-    dump (body);
+    dump (*body);
     
     std::cout << "Game is finished? " << finished << std::endl;
 }

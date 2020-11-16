@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 
-enum square
+enum square : int64_t
 {
     ACQUIRED = 5,
     WALL = 4,
@@ -25,15 +25,15 @@ typedef struct sokoban
     int numOfBoxes;
     pos player;
     pos dim;
-    square* map;
-    std::vector <pos> boxes;
-    std::vector <pos> targets;
+    std::vector<square> map;
+    std::vector<pos> boxes;
+    std::vector<pos> targets;
    // int numTargets;
 } sokoban;
 
 
 void dump (sokoban game);
-sokoban scan (std::string arg);
+sokoban* scan (const std::string& arg);
 bool makeMove (const sokoban* current, char move, sokoban* output);
 
 #endif

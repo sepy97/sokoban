@@ -3,7 +3,7 @@ project(sokoban)               # Create project "simple_example"
 set(CMAKE_CXX_STANDARD 17)            # Enable c++14 standard
 
 # Add main.cpp file of project root directory as source file
-set(SOURCE_FILES main.cpp sokoban.cpp sokoban.h)
+set(SOURCE_FILES main.cpp ./sokoban/sokoban.cpp ./sokoban/sokoban.h)
 
 configure_file(sokoban00.txt ${CMAKE_CURRENT_BINARY_DIR}/sokoban00.txt COPYONLY)
 

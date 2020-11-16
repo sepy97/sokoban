@@ -10,11 +10,11 @@
 
 // Helper function to index 2-dimensional arrays
 // Fortran order -> Column first
-constexpr int index(int dim0, int dim1, const int i0, const int i1) {
+constexpr int index(const int dim0, const int dim1, const int i0, const int i1) {
     return i1 * dim0 + i0;
 };
 
-void dump (sokoban game)
+void dump (const sokoban& game)
 {
     printf ("Sokoban: \nPlayer: %d %d\nDimensions of the map: %d %d\nMap: \n", \
             game.player.y, game.player.x, game.dim.y, game.dim.x);
@@ -53,11 +53,11 @@ void dump (sokoban game)
     }
 }
 
-sokoban scan (std::string arg)
+sokoban* scan (const std::string& arg)
 {
     std::ifstream myfile (arg.c_str());
     
-    sokoban result;
+    sokoban* result = new sokoban;
     int sizeH = 0, sizeV = 0;
     
     if (myfile.is_open())
@@ -66,19 +66,20 @@ sokoban scan (std::string arg)
         myfile >> sizeV;
     }
     
-    result.map = new square[sizeH * sizeV];
+    // result->map = new square[sizeH * sizeV];
     
     for (int y = 0; y < sizeV; y++)
     {
         for (int x = 0; x < sizeH; x++)
         {
-            const int idx = index (sizeH, sizeV, x, y);
-            result.map[idx] = FREE;
+            result->map.push_back(FREE);
+            // const int idx = index (sizeH, sizeV, x, y);
+            // result->map[idx] = FREE;
         }
     }
 
-    result.dim.x = sizeH;
-    result.dim.y = sizeV;
+    result->dim.x = sizeH;
+    result->dim.y = sizeV;
 
     int numOfWalls = 0;
     myfile >> numOfWalls;
@@ -89,12 +90,12 @@ sokoban scan (std::string arg)
         myfile >> y;
         myfile >> x;
         const int wall_idx = index (sizeH, sizeV, x - 1, y - 1);
-        result.map[wall_idx] = WALL;
+        result->map[wall_idx] = WALL;
     }
 
-    myfile >> result.numOfBoxes;
+    myfile >> result->numOfBoxes;
 
-    for (int i = 0; i < result.numOfBoxes; i++)
+    for (int i = 0; i < result->numOfBoxes; i++)
     {
         int x = 0, y = 0;
         myfile >> y;
@@ -104,8 +105,8 @@ sokoban scan (std::string arg)
         tmp.x = x-1;
 
         const int box_idx = index (sizeH, sizeV, x - 1, y - 1);
-        result.boxes.push_back (tmp);
-        result.map[box_idx] = BOX;
+        result->boxes.push_back (tmp);
+        result->map[box_idx] = BOX;
     }
 
     int numOfTargets = 0;
@@ -119,20 +120,20 @@ sokoban scan (std::string arg)
         pos tmp;
         tmp.y = y-1;
         tmp.x = x-1;
-        result.targets.push_back (tmp);
+        result->targets.push_back (tmp);
 
         const int target_idx = index (sizeH, sizeV, x - 1, y - 1);
     //    if (result.map[target_idx] == BOX) result.numTargets--;
-        result.map[target_idx] = TARGET;
+        result->map[target_idx] = TARGET;
     }
         
     int player_x = 0, player_y = 0;
     myfile >> player_y >> player_x;
-    result.player.x = player_x-1;
-    result.player.y = player_y-1;
+    result->player.x = player_x-1;
+    result->player.y = player_y-1;
 
-    const int player_idx = index (sizeH, sizeV, result.player.x, result.player.y);
-    result.map[player_idx] = PLAYER;
+    const int player_idx = index (sizeH, sizeV, result->player.x, result->player.y);
+    result->map[player_idx] = PLAYER;
 
     return result;
 }
@@ -154,7 +155,7 @@ bool hasBox (sokoban current, pos box)
     return (current.map[index (current.dim.x, current.dim.y, box.x, box.y)] == BOX);// || current.map[index (current.dim.x, current.dim.y, box.x, box.y) == ACQUIRED);
 }
 
-bool makeMove (const sokoban* current, char move, sokoban* output)
+bool makeMove (const sokoban* const current, char move, sokoban* output)
 {
     sokoban result = *current;
     pos toMove;
@@ -257,6 +258,7 @@ bool makeMove (const sokoban* current, char move, sokoban* output)
             result.player.y = madeMove.y;
         }
     }
+
 	*output = result;
 
     for (int i = 0; i < result.targets.size(); i++)
