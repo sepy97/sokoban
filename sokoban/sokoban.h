@@ -39,4 +39,6 @@ void dump (const sokoban& game);
 sokoban* scan (const std::string& arg);
 bool makeMove (const sokoban* current, char move, sokoban* output);
 
+void expand (const sokoban* current, sokoban* output);
+
 #endif

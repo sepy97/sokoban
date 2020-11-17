@@ -284,3 +284,21 @@ bool makeMove (const sokoban* const current, char move, sokoban* output)
     //return (output->numTargets == 0);
     //return false;
 }
+
+void expand (const sokoban* current, sokoban* output)
+{
+	//std::vector <sokoban> result;
+	char moves[4] = {'U', 'D', 'L', 'R'};
+
+//try to parallelize this loop with omp
+	for (int i = 0; i < 4; i++)
+	{
+		sokoban tst; //= new sokoban;
+		makeMove (current, moves[i], &output[i]);
+		//result.push_back (tst);
+		
+//		dump (output[i]);
+	}
+	
+	//return result;
+}
