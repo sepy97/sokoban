@@ -41,4 +41,15 @@ bool makeMove (const sokoban* current, char move, sokoban* output);
 
 void expand (const sokoban* current, sokoban* output);
 
+bool isHorisontalPairing (pos box1, pos box2);
+bool isVerticalPairing (pos box1, pos box2);
+bool isBlockedFromTop (pos box1, pos box2, const sokoban* state);
+bool isBlockedFromBottom (pos box1, pos box2, const sokoban* state);
+bool isBlockedFromLeft (pos box1, pos box2, const sokoban* state);
+bool isBlockedFromRight (pos box1, pos box2, const sokoban* state);
+
+bool isOnTarget (pos box, const sokoban* state);
+bool isBoxCornered (pos box, const sokoban* state);
+bool isDeadlocked (const sokoban* state);
+
 #endif

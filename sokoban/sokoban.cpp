@@ -302,3 +302,148 @@ void expand (const sokoban* current, sokoban* output)
 	
 	//return result;
 }
+
+bool isOnTarget (pos box, const sokoban* state)
+{
+    for (int i = 0; i < state->targets.size (); i++)
+    {
+        if ( (box.x == state->targets[i].x) && (box.y == state->targets[i].y) ) return true;
+    }
+    return false;
+}
+
+bool isBoxCornered (pos box, const sokoban* state)
+{
+    if (box.x == 0 && box.y == 0)
+    {
+        return true;
+    }
+    else if (box.x == 0 && box.y == state->dim.y-1)
+    {
+        return true;
+        
+    }
+    else if (box.y == 0 && box.x == state->dim.x-1)
+    {
+        return true;
+    }
+    else if (box.x == state->dim.x-1 && box.y == state->dim.y-1)
+    {
+        return true;
+    }
+    else
+    {
+        if (box.x == 0)
+        {
+            if (state->map[index (state->dim.x, state->dim.y, box.x+1, box.y)] == WALL && state->map[index (state->dim.x, state->dim.y, box.x, box.y-1)] == WALL) return true;
+            if (state->map[index (state->dim.x, state->dim.y, box.x+1, box.y)] == WALL && state->map[index (state->dim.x, state->dim.y, box.x, box.y+1)] == WALL) return true;
+        }
+        else if (box.y == 0)
+        {
+            if (state->map[index (state->dim.x, state->dim.y, box.x-1, box.y)] == WALL && state->map[index (state->dim.x, state->dim.y, box.x, box.y+1)] == WALL) return true;
+            if (state->map[index (state->dim.x, state->dim.y, box.x+1, box.y)] == WALL && state->map[index (state->dim.x, state->dim.y, box.x, box.y+1)] == WALL) return true;
+        }
+        else if (box.x == state->dim.x-1)
+        {
+            if (state->map[index (state->dim.x, state->dim.y, box.x-1, box.y)] == WALL && state->map[index (state->dim.x, state->dim.y, box.x, box.y-1)] == WALL) return true;
+            if (state->map[index (state->dim.x, state->dim.y, box.x-1, box.y)] == WALL && state->map[index (state->dim.x, state->dim.y, box.x, box.y+1)] == WALL) return true;
+        }
+        else if (box.y == state->dim.y-1)
+        {
+            if (state->map[index (state->dim.x, state->dim.y, box.x-1, box.y)] == WALL && state->map[index (state->dim.x, state->dim.y, box.x, box.y-1)] == WALL) return true;
+            if (state->map[index (state->dim.x, state->dim.y, box.x+1, box.y)] == WALL && state->map[index (state->dim.x, state->dim.y, box.x, box.y-1)] == WALL) return true;
+        }
+        else
+        {
+            if (state->map[index (state->dim.x, state->dim.y, box.x-1, box.y)] == WALL && state->map[index (state->dim.x, state->dim.y, box.x, box.y-1)] == WALL) return true;
+            if (state->map[index (state->dim.x, state->dim.y, box.x+1, box.y)] == WALL && state->map[index (state->dim.x, state->dim.y, box.x, box.y-1)] == WALL) return true;
+            if (state->map[index (state->dim.x, state->dim.y, box.x-1, box.y)] == WALL && state->map[index (state->dim.x, state->dim.y, box.x, box.y+1)] == WALL) return true;
+            if (state->map[index (state->dim.x, state->dim.y, box.x+1, box.y)] == WALL && state->map[index (state->dim.x, state->dim.y, box.x, box.y+1)] == WALL) return true;
+        }
+    }
+    
+    return false;
+}
+
+bool isHorisontalPairing (pos box1, pos box2)
+{
+    if (box1.y == box2.y)
+    {
+        return ( ((box1.x - box2.x) * (box1.x - box2.x)) == 1 );
+    }
+}
+
+bool isVerticalPairing (pos box1, pos box2)
+{
+    if (box1.x == box2.x)
+    {
+        return ( ((box1.y - box2.y) * (box1.y - box2.y)) == 1 );
+    }
+}
+
+bool isBlockedFromTop (pos box1, pos box2, const sokoban* state)
+{
+    if (box1.y == 0 || box2.y == 0) return true;
+    if ((state->map[index (state->dim.x, state->dim.y, box1.x, box1.y-1)] == WALL ||
+         state->map[index (state->dim.x, state->dim.y, box1.x, box1.y-1)] == BOX) &&
+        (state->map[index (state->dim.x, state->dim.y, box2.x, box2.y-1)] == WALL ||
+         state->map[index (state->dim.x, state->dim.y, box2.x, box2.y-1)] == BOX)) return true;
+}
+
+bool isBlockedFromBottom (pos box1, pos box2, const sokoban* state)
+{
+    if (box1.y == state->dim.y-1 || box2.y == state->dim.y-1) return true;
+    if ((state->map[index (state->dim.x, state->dim.y, box1.x, box1.y+1)] == WALL ||
+         state->map[index (state->dim.x, state->dim.y, box1.x, box1.y+1)] == BOX) &&
+        (state->map[index (state->dim.x, state->dim.y, box2.x, box2.y+1)] == WALL ||
+         state->map[index (state->dim.x, state->dim.y, box2.x, box2.y+1)] == BOX)) return true;
+}
+
+bool isBlockedFromLeft (pos box1, pos box2, const sokoban* state)
+{
+    if (box1.x == 0 || box2.x == 0) return true;
+    if ((state->map[index (state->dim.x, state->dim.y, box1.x-1, box1.y)] == WALL ||
+         state->map[index (state->dim.x, state->dim.y, box1.x-1, box1.y)] == BOX) &&
+        (state->map[index (state->dim.x, state->dim.y, box2.x-1, box2.y)] == WALL ||
+         state->map[index (state->dim.x, state->dim.y, box2.x-1, box2.y)] == BOX)) return true;
+}
+
+bool isBlockedFromRight (pos box1, pos box2, const sokoban* state)
+{
+    if (box1.x == state->dim.x-1 || box2.x == state->dim.x-1) return true;
+    if ((state->map[index (state->dim.x, state->dim.y, box1.x+1, box1.y)] == WALL ||
+         state->map[index (state->dim.x, state->dim.y, box1.x+1, box1.y)] == BOX) &&
+        (state->map[index (state->dim.x, state->dim.y, box2.x+1, box2.y)] == WALL ||
+         state->map[index (state->dim.x, state->dim.y, box2.x+1, box2.y)] == BOX)) return true;
+}
+
+bool isDeadlocked (const sokoban* state)
+{
+    for (int i = 0; i < state->numOfBoxes; i++)
+    {
+        if (!isOnTarget (state->boxes[i], state))
+        {
+            if (isBoxCornered (state->boxes[i], state)) return true;
+            //else
+            for (int j = 0; j < state->numOfBoxes; j++)
+            {
+                if (isHorisontalPairing (state->boxes[i], state->boxes[j]))
+                {
+                    if (isBlockedFromTop (state->boxes[i], state->boxes[j], state)) return true;
+                        
+                    if (isBlockedFromBottom (state->boxes[i], state->boxes[j], state)) return true;
+                        
+                }
+                else if (isVerticalPairing (state->boxes[i], state->boxes[j]))
+                {
+                    if (isBlockedFromLeft (state->boxes[i], state->boxes[j], state)) return true;
+                            
+                    if (isBlockedFromRight (state->boxes[i], state->boxes[j], state)) return true;
+                            
+                }
+            }
+        }
+    }
+    
+    return false;
+}

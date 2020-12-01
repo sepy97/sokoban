@@ -29,6 +29,10 @@ int main(int argc, const char * argv[])
     
     std::cout << "Game is finished? " << finished << std::endl;
 
+    bool iscornered = isBoxCornered (body->boxes[0], body);
+
+    std::cout << "Is box in a corner? " << iscornered << std::endl;
+
     // std::vector <sokoban> tmp = expand (output);
     sokoban exp[4]; // = (sokoban**) calloc (4, sizeof (sokoban*));
     expand (output, exp);
