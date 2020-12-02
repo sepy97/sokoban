@@ -1,12 +1,12 @@
 from time import time
 from tqdm import tqdm
 
-import sokoban
+from sokoban import SokobanState
 
 N = 10_000_000
 
 if __name__ == "__main__":
-    state = sokoban.load_state("./sokoban00.txt")
+    state = SokobanState.load("./sokoban00.txt")
 
     print("Original State")
     print("-" * 70)
@@ -14,7 +14,7 @@ if __name__ == "__main__":
     print("-" * 70)
     print()
     
-    result = sokoban.next_state(state, 2)
+    result = state.next_state(2)
     print("New State")
     print("-" * 70)
     result.display()
@@ -33,7 +33,19 @@ if __name__ == "__main__":
 
     t0 = time()
     for _ in tqdm(range(N)):
-        sokoban.next_state(state, 2)
+        state.next_state(2)
     t1 = time()
     print(f"Average time per call: {1000 * 1000 * 1000 * (t1 - t0) / N:.3f} ns")
+
+    t0 = time()
+    for _ in tqdm(range(N)):
+        state.expand()
+    t1 = time()
+    print(f"Average time per expand: {1000 * 1000 * 1000 * (t1 - t0) / N:.3f} ns")
+
+    t0 = time()
+    for _ in tqdm(range(N)):
+        state.dead_lock
+    t1 = time()
+    print(f"Average time per deadlock: {1000 * 1000 * 1000 * (t1 - t0) / N:.3f} ns")
  

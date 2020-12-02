@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
+#include <tuple>
 
 #include "sokoban.h"
 
@@ -19,10 +20,23 @@ sokoban* new_state() {
     return new sokoban;
 }
 
+// Dummy function that is necessary to dynamically copy a sokoban struct from python
+sokoban* copy_state(const sokoban* const state) {
+    sokoban* output = new_state();
+    *output = *state;
+    return output;
+}
+
+// Dummy function that is necessary to dynamically create the sokoban struct from python.
+std::vector<sokoban*> new_state_vector() {
+    return {new_state(), new_state(), new_state(), new_state()};
+}
+
 // Dummy function that is necessary to clean up struct memory from python.
 void delete_state(sokoban* state) {
     delete state;
 }
+
 
 void dump (const sokoban& game)
 {
@@ -148,7 +162,7 @@ sokoban* scan (const std::string& arg)
     return result;
 }
 
-bool isValid (sokoban current, pos move)
+constexpr bool isValid (const sokoban& current, const pos& move)
 {
     if (move.y >= 0 and move.x < current.dim.x and move.y >= 0 and move.y < current.dim.y)
     {
@@ -156,16 +170,16 @@ bool isValid (sokoban current, pos move)
     }
     else
     {
-        return false;
+        return false; 
     }
 }
 
-bool hasBox (sokoban current, pos box)
+bool hasBox (const sokoban& current, const pos& box)
 {
     return (current.map[index (current.dim.x, current.dim.y, box.x, box.y)] == BOX);// || current.map[index (current.dim.x, current.dim.y, box.x, box.y) == ACQUIRED);
 }
 
-bool makeMove (const sokoban* const current, char move, sokoban* output)
+bool makeMove (const sokoban* const current, const char move, sokoban* output)
 {
     if (output == nullptr) {
         output = new_state();
@@ -285,25 +299,21 @@ bool makeMove (const sokoban* const current, char move, sokoban* output)
     //return false;
 }
 
-void expand (const sokoban* current, sokoban* output)
+std::vector<bool> expand (const sokoban* const current, std::vector<sokoban*>& output)
 {
 	//std::vector <sokoban> result;
-	char moves[4] = {'U', 'D', 'L', 'R'};
+	const char moves[4] = {'U', 'R', 'D', 'L'};
+    std::vector<bool> solved(4);
 
-//try to parallelize this loop with omp
-	for (int i = 0; i < 4; i++)
-	{
-		sokoban tst; //= new sokoban;
-		makeMove (current, moves[i], &output[i]);
-		//result.push_back (tst);
-		
-//		dump (output[i]);
+    //try to parallelize this loop with omp
+	for (int i = 0; i < 4; i++) {
+		solved[i] = makeMove (current, moves[i], output[i]);
 	}
 	
-	//return result;
+	return solved;
 }
 
-bool isOnTarget (pos box, const sokoban* state)
+bool isOnTarget (const pos& box, const sokoban* const state)
 {
     for (int i = 0; i < state->targets.size (); i++)
     {
@@ -312,7 +322,7 @@ bool isOnTarget (pos box, const sokoban* state)
     return false;
 }
 
-bool isBoxCornered (pos box, const sokoban* state)
+constexpr bool isBoxCornered (const pos& box, const sokoban* const state)
 {
     if (box.x == 0 && box.y == 0)
     {
@@ -365,7 +375,7 @@ bool isBoxCornered (pos box, const sokoban* state)
     return false;
 }
 
-bool isHorisontalPairing (pos box1, pos box2)
+constexpr bool isHorisontalPairing (const pos& box1, const pos& box2)
 {
     if (box1.y == box2.y)
     {
@@ -373,7 +383,7 @@ bool isHorisontalPairing (pos box1, pos box2)
     }
 }
 
-bool isVerticalPairing (pos box1, pos box2)
+constexpr bool isVerticalPairing (const pos& box1, const pos& box2)
 {
     if (box1.x == box2.x)
     {
@@ -381,7 +391,7 @@ bool isVerticalPairing (pos box1, pos box2)
     }
 }
 
-bool isBlockedFromTop (pos box1, pos box2, const sokoban* state)
+constexpr bool isBlockedFromTop (const pos& box1, const pos& box2, const sokoban* const state)
 {
     if (box1.y == 0 || box2.y == 0) return true;
     if ((state->map[index (state->dim.x, state->dim.y, box1.x, box1.y-1)] == WALL ||
@@ -390,7 +400,7 @@ bool isBlockedFromTop (pos box1, pos box2, const sokoban* state)
          state->map[index (state->dim.x, state->dim.y, box2.x, box2.y-1)] == BOX)) return true;
 }
 
-bool isBlockedFromBottom (pos box1, pos box2, const sokoban* state)
+constexpr bool isBlockedFromBottom (const pos& box1, const pos& box2, const sokoban* const state)
 {
     if (box1.y == state->dim.y-1 || box2.y == state->dim.y-1) return true;
     if ((state->map[index (state->dim.x, state->dim.y, box1.x, box1.y+1)] == WALL ||
@@ -399,7 +409,7 @@ bool isBlockedFromBottom (pos box1, pos box2, const sokoban* state)
          state->map[index (state->dim.x, state->dim.y, box2.x, box2.y+1)] == BOX)) return true;
 }
 
-bool isBlockedFromLeft (pos box1, pos box2, const sokoban* state)
+constexpr bool isBlockedFromLeft (const pos& box1, const pos& box2, const sokoban* const state)
 {
     if (box1.x == 0 || box2.x == 0) return true;
     if ((state->map[index (state->dim.x, state->dim.y, box1.x-1, box1.y)] == WALL ||
@@ -408,7 +418,7 @@ bool isBlockedFromLeft (pos box1, pos box2, const sokoban* state)
          state->map[index (state->dim.x, state->dim.y, box2.x-1, box2.y)] == BOX)) return true;
 }
 
-bool isBlockedFromRight (pos box1, pos box2, const sokoban* state)
+constexpr bool isBlockedFromRight (const pos& box1, const pos& box2, const sokoban* const state)
 {
     if (box1.x == state->dim.x-1 || box2.x == state->dim.x-1) return true;
     if ((state->map[index (state->dim.x, state->dim.y, box1.x+1, box1.y)] == WALL ||
@@ -417,7 +427,7 @@ bool isBlockedFromRight (pos box1, pos box2, const sokoban* state)
          state->map[index (state->dim.x, state->dim.y, box2.x+1, box2.y)] == BOX)) return true;
 }
 
-bool isDeadlocked (const sokoban* state)
+bool isDeadlocked (const sokoban* const state)
 {
     for (int i = 0; i < state->numOfBoxes; i++)
     {

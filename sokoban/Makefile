@@ -1,9 +1,6 @@
+
 compile:
-	echo "Compiling C++ code and cython interface."
-	python3 compile.py build_ext --inplace
-	rm -rf build
+	$(MAKE) -C environment compile
 
 clean:
-	rm sokoban_interface.html
-	rm sokoban_interface.cpp
-	rm sokoban_interface.*.so
+	$(MAKE) -C environment clean

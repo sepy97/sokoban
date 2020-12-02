@@ -7,7 +7,7 @@
 
 #include <iostream>
 
-#include "./sokoban/sokoban.h"
+#include "./sokoban/environment/sokoban.h"
 
 int main(int argc, const char * argv[])
 {
@@ -29,20 +29,22 @@ int main(int argc, const char * argv[])
     
     std::cout << "Game is finished? " << finished << std::endl;
 
-    bool iscornered = isBoxCornered (body->boxes[0], body);
+    bool iscornered = isDeadlocked(body);
 
     std::cout << "Is box in a corner? " << iscornered << std::endl;
 
     // std::vector <sokoban> tmp = expand (output);
-    sokoban exp[4]; // = (sokoban**) calloc (4, sizeof (sokoban*));
-    expand (output, exp);
+    auto exp = new_state_vector(); // = (sokoban**) calloc (4, sizeof (sokoban*));
+    expand (body, exp);
 
     std::cout << "Expanding moves: " << std:: endl;
-    for (int i = 0; i < 4; i++)
-    {
-	dump (exp[i]);
+    for (int i = 0; i < 4; i++) {
+	    dump (*exp[i]);
     }
 
     delete body;
     delete output;
+    for (auto& state : exp) {
+        delete state;
+    }
 }
