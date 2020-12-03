@@ -22,19 +22,23 @@ int main(int argc, const char * argv[])
     
     dump (*body);
     
-    bool finished = makeMove (body, 'D', output);
+    bool finished = makeMove (body, 'U', output);
+    finished = makeMove (output, 'L', body);
+    finished = makeMove (body, 'L', output);
+    finished = makeMove (output, 'L', body);
+//    finished = makeMove (body, 'L', output);
     
     dump (*output);
     dump (*body);
     
     std::cout << "Game is finished? " << finished << std::endl;
 
-    bool iscornered = isDeadlocked(body);
+    bool iscornered = isDeadlocked (output);
 
-    std::cout << "Is box in a corner? " << iscornered << std::endl;
+    std::cout << "Is box in a deadlock? " << iscornered << std::endl;
 
     // std::vector <sokoban> tmp = expand (output);
-    auto exp = new_state_vector(); // = (sokoban**) calloc (4, sizeof (sokoban*));
+/*    auto exp = new_state_vector(); // = (sokoban**) calloc (4, sizeof (sokoban*));
     expand (body, exp);
 
     std::cout << "Expanding moves: " << std:: endl;
@@ -42,9 +46,10 @@ int main(int argc, const char * argv[])
 	    dump (*exp[i]);
     }
 
-    delete body;
-    delete output;
     for (auto& state : exp) {
         delete state;
     }
+*/
+    delete body;
+    delete output;
 }

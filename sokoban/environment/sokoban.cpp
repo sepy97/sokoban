@@ -381,6 +381,7 @@ constexpr bool isHorisontalPairing (const pos& box1, const pos& box2)
     {
         return ( ((box1.x - box2.x) * (box1.x - box2.x)) == 1 );
     }
+    return false;
 }
 
 constexpr bool isVerticalPairing (const pos& box1, const pos& box2)
@@ -389,6 +390,7 @@ constexpr bool isVerticalPairing (const pos& box1, const pos& box2)
     {
         return ( ((box1.y - box2.y) * (box1.y - box2.y)) == 1 );
     }
+    return false;
 }
 
 constexpr bool isBlockedFromTop (const pos& box1, const pos& box2, const sokoban* const state)
@@ -398,6 +400,7 @@ constexpr bool isBlockedFromTop (const pos& box1, const pos& box2, const sokoban
          state->map[index (state->dim.x, state->dim.y, box1.x, box1.y-1)] == BOX) &&
         (state->map[index (state->dim.x, state->dim.y, box2.x, box2.y-1)] == WALL ||
          state->map[index (state->dim.x, state->dim.y, box2.x, box2.y-1)] == BOX)) return true;
+    return false;
 }
 
 constexpr bool isBlockedFromBottom (const pos& box1, const pos& box2, const sokoban* const state)
@@ -407,6 +410,7 @@ constexpr bool isBlockedFromBottom (const pos& box1, const pos& box2, const soko
          state->map[index (state->dim.x, state->dim.y, box1.x, box1.y+1)] == BOX) &&
         (state->map[index (state->dim.x, state->dim.y, box2.x, box2.y+1)] == WALL ||
          state->map[index (state->dim.x, state->dim.y, box2.x, box2.y+1)] == BOX)) return true;
+    return false;
 }
 
 constexpr bool isBlockedFromLeft (const pos& box1, const pos& box2, const sokoban* const state)
@@ -416,6 +420,8 @@ constexpr bool isBlockedFromLeft (const pos& box1, const pos& box2, const sokoba
          state->map[index (state->dim.x, state->dim.y, box1.x-1, box1.y)] == BOX) &&
         (state->map[index (state->dim.x, state->dim.y, box2.x-1, box2.y)] == WALL ||
          state->map[index (state->dim.x, state->dim.y, box2.x-1, box2.y)] == BOX)) return true;
+
+    return false;
 }
 
 constexpr bool isBlockedFromRight (const pos& box1, const pos& box2, const sokoban* const state)
@@ -425,6 +431,7 @@ constexpr bool isBlockedFromRight (const pos& box1, const pos& box2, const sokob
          state->map[index (state->dim.x, state->dim.y, box1.x+1, box1.y)] == BOX) &&
         (state->map[index (state->dim.x, state->dim.y, box2.x+1, box2.y)] == WALL ||
          state->map[index (state->dim.x, state->dim.y, box2.x+1, box2.y)] == BOX)) return true;
+    return false;
 }
 
 bool isDeadlocked (const sokoban* const state)
