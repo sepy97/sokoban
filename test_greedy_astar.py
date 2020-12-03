@@ -1,5 +1,6 @@
 from sokoban import SokobanState, Astar
 from sokoban.heuristics import GreedyHeuristic
+from time import time
 
 def action_to_string(action):
     if action == 0:
@@ -21,8 +22,15 @@ if __name__ == "__main__":
     print("-" * 70)
     print()
     
+    t0 = time()
     states, actions = Astar(state, heuristic)
+    t1 = time()
     print("Solution Found!")
     print("-" * 70)
     print(f"Actions: {' '.join(map(action_to_string, actions))}")
+    print(f"Time taken: {1000 * (t1 - t0)} ms.")
+
+    input("Press enter to display the solution as a sequence of states.")
+    for state in states:
+        state.display()
     # print(Astar(state, heuristic))

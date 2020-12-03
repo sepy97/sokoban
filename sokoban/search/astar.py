@@ -45,14 +45,17 @@ def Astar(start: SokobanState, heuristic: BaseHeuristic) -> Optional[TPath]:
         state_cost = costs[state]
         
         if state.solved:
+            print(f"States explored: {len(parents)}")
             return Astar_path(start, state, parents)
-        
+
         children = expand_state(state)
         for action, child in enumerate(children):
+            if child.dead_lock:
+                continue
+
             cost = state_cost + 1
             if cost < costs[child]:
                 parents[child] = (state, action)
                 costs[child] = cost
                 open_set.put(PrioritizedItem(cost + heuristic(child), child))
-    
     return None

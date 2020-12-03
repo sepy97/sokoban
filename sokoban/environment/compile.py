@@ -6,7 +6,7 @@ from Cython.Build import cythonize
 ext = [
        Extension("sokoban_interface", ["sokoban_interface.pyx", "sokoban.cpp"],
                  extra_compile_args=["-Ofast", "-march=native", "-std=c++14"],
-                 extra_link_args=['-fopenmp'],
+                 # extra_link_args=['-fopenmp'],
                  language="c++")
        ]
 

@@ -54,16 +54,20 @@ void dump (const sokoban& game)
                     printf (" ");
                     break;
                 case BOX:
-                    printf ("$");
+                    // printf ("$");
+                    printf("▇");
                     break;
                 case PLAYER:
-                    printf ("@");
+                    // printf("@");
+                    printf("☺");
                     break;
                 case TARGET:
-                    printf (".");
+                    // printf(".");
+                    printf(".");
                     break;
                 case WALL:
-                    printf ("#");
+                    // printf ("#");
+                    printf("▒");
                     break;
                 case ACQUIRED:
                     printf ("*");
