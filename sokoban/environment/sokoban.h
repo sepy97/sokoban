@@ -5,6 +5,7 @@
 #include <string>
 #include <tuple>
 
+// the uint8_t enforces that this enum will be compatible with numpy
 enum square : uint8_t
 {
     ACQUIRED = 5,
@@ -15,10 +16,14 @@ enum square : uint8_t
     FREE = 0
 };
 
-typedef struct pos
+// SUPER DUPER SKETCHY
+// We make sure that the struct is packed, I think this only works on GCC
+// Also we swap the order or x and y because our board gets
+// transposed when it goes through numpy for some reason.
+typedef struct __attribute__ ((__packed__)) pos
 {
-    int x;
     int y;
+    int x;
 } pos;
 
 typedef struct sokoban

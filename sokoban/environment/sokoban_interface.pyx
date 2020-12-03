@@ -3,7 +3,7 @@
 from cython.operator cimport dereference as deref
 
 from libc.stdlib cimport malloc, free
-from libc.stdint cimport uint8_t
+from libc.stdint cimport uint8_t, int32_t
 
 from libcpp.vector cimport vector
 from libcpp.string cimport string
@@ -50,11 +50,16 @@ cdef class SokobanState:
     """A wrapper class for a C/C++ data structure"""
     cdef sokoban *_state
     cdef uint8_t[:, ::1] _state_buffer
+    cdef int32_t[:, ::1] _boxes_buffer
+    cdef int32_t[:, ::1] _targets_buffer
+    cdef int32_t[::1] _player_buffer
     cdef bool _solved
 
     cdef bool ptr_owner
     cdef int size_x
     cdef int size_y
+    cdef int _num_boxes
+    cdef int _num_targets
 
     def __cinit__(self, other=None):
         if other and type(other) is SokobanState:
@@ -104,6 +109,27 @@ cdef class SokobanState:
         return np.copy(np.ctypeslib.as_array(self._state_buffer))
 
     @property
+    def boxes(self):
+        if self._state is NULL or self.size_x == 0:
+            return None
+
+        return np.copy(np.ctypeslib.as_array(self._boxes_buffer))
+
+    @property
+    def targets(self):
+        if self._state is NULL or self.size_x == 0:
+            return None
+
+        return np.copy(np.ctypeslib.as_array(self._targets_buffer))
+
+    @property
+    def player(self):
+        if self._state is NULL or self.size_x == 0:
+            return None
+
+        return np.copy(np.ctypeslib.as_array(self._player_buffer))
+ 
+    @property
     def dead_lock(self):
         return self._dead_lock()
 
@@ -137,9 +163,15 @@ cdef class SokobanState:
         wrapper.size_x = _state.dim.x
         wrapper.size_y = _state.dim.y
 
+        wrapper._num_boxes = _state.boxes.size()
+        wrapper._num_targets = _state.targets.size()
+
         # This is a little bit sketchy, because we are coercing the enum into an uint8_t
         # However, we define the enum to be an uint8_t in the header file so its probably fine...
         wrapper._state_buffer = <uint8_t[:wrapper.size_y, :wrapper.size_x]> <uint8_t*> _state.map.data()
+        wrapper._boxes_buffer = <int32_t[:wrapper._num_boxes, :2]> <int32_t*> _state.boxes.data()
+        wrapper._targets_buffer = <int32_t[:wrapper._num_targets, :2]> <int32_t*> _state.targets.data()
+        wrapper._player_buffer = <int32_t[:2]> <int32_t*> &_state.player
         wrapper.ptr_owner = owner
         wrapper._solved = solved
         return wrapper
