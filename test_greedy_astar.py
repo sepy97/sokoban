@@ -1,5 +1,5 @@
 from sokoban import SokobanState, Astar
-from sokoban.heuristics import GreedyHeuristic
+from sokoban.heuristics import GreedyHeuristic, ManhattanHeuristic, EuclidHeuristic
 from time import time
 
 def action_to_string(action):
@@ -14,7 +14,9 @@ def action_to_string(action):
 
 if __name__ == "__main__":
     state = SokobanState.load("./sokoban01.txt")
-    heuristic = GreedyHeuristic()
+    #heuristic = GreedyHeuristic()
+    #heuristic = ManhattanHeuristic()
+    heuristic = EuclidHeuristic()
 
     print("Initial State")
     print("-" * 70)
