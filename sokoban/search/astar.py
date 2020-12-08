@@ -35,14 +35,19 @@ def Astar(start: SokobanState, heuristic: BaseHeuristic) -> Optional[TPath]:
     parents: Mapping[SokobanState, Tuple[SokobanState, int]] = defaultdict(lambda: None)
     costs: Mapping[SokobanState, float] = defaultdict(lambda: float('inf'))
     open_set: PriorityQueue[PrioritizedItem] = PriorityQueue()
+    
+    # Hashing
+    state_table = dict ({})
 
     # Add the start state at the from of the queue and set its path to 0.
     open_set.put(PrioritizedItem(0, start))
     costs[start] = 0
+    num_of_moves = 0
     
     while not open_set.empty():
         state = open_set.get().item
         state_cost = costs[state]
+        num_of_moves += 1
         
         if state.solved:
             print(f"States explored: {len(parents)}")
@@ -54,6 +59,11 @@ def Astar(start: SokobanState, heuristic: BaseHeuristic) -> Optional[TPath]:
                 continue
 
             cost = state_cost + 1
+            
+            stored_num_of_moves = state_table.get (child)
+            if (not stored_num_of_moves is None) and (stored_num_of_moves <= num_of_moves): continue
+            state_table [child] = num_of_moves
+            
             if cost < costs[child]:
                 parents[child] = (state, action)
                 costs[child] = cost
