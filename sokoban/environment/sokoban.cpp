@@ -161,9 +161,60 @@ sokoban* scan (const std::string& arg)
     result->player.y = player_y-1;
 
     const int player_idx = index (sizeH, sizeV, result->player.x, result->player.y);
-    result->map[player_idx] = PLAYER;
+    if (player_idx > 0) {
+        result->map[player_idx] = PLAYER;
+    }
 
     return result;
+}
+
+sokoban* generate(const std::string &wall_file, int num_targets, int num_steps) {
+    auto state = scan(wall_file);
+    const auto size_x = state->dim.x;
+    const auto size_y = state->dim.y;
+
+    int x, y;
+
+    while (state->numOfBoxes < num_targets) {
+        x = rand() % size_x;
+        y = rand() % size_y;
+        const auto current_index = index(size_x, size_y, x, y);
+
+        if (state->map[current_index] != FREE)
+            continue;
+
+        state->map[current_index] = BOX;
+        state->targets.push_back({.y = y, .x = x});
+        state->boxes.push_back({.y = y, .x = x});
+        state->numOfBoxes++;
+    }
+
+    bool found_location = false;
+    for (auto& delta : {-1, 1}) {
+        for (auto& vertical : {false, true}) {
+            const auto player_x = vertical ? x : x + delta;
+            const auto player_y = vertical ? y + delta : y;
+            const auto current_index = index(size_x, size_y, player_x, player_y);
+
+            if (!found_location && state->map[current_index] == FREE) {
+                state->map[current_index] = PLAYER;
+                state->player.x = player_x;
+                state->player.y = player_y;
+                found_location = true;
+            }
+        }
+    }
+
+    if (!found_location) {
+        printf("No location found for player, very bad wall configuration!");
+    }
+
+    dump(*state);
+    auto output = new_state();
+    randomSequence(state, num_steps, output);
+
+    delete_state(state);
+    return output;
 }
 
 constexpr bool isValid (const sokoban& current, const pos& move)
@@ -183,15 +234,9 @@ bool hasBox (const sokoban& current, const pos& box)
     return (current.map[index (current.dim.x, current.dim.y, box.x, box.y)] == BOX);// || current.map[index (current.dim.x, current.dim.y, box.x, box.y) == ACQUIRED);
 }
 
-bool makeMove (const sokoban* const current, const char move, sokoban* output)
-{
-    if (output == nullptr) {
-        output = new_state();
-    }
+pos createMoveDelta(const char move) {
+    pos toMove {0, 0};
 
-    *output = *current;
-
-    pos toMove;
     switch (move)
     {
         case 'U':
@@ -214,93 +259,165 @@ bool makeMove (const sokoban* const current, const char move, sokoban* output)
             printf ("Error on makeMove function!");
             break;
     }
-    
-    pos madeMove;
-    madeMove.x = output->player.x + toMove.x;
-    madeMove.y = output->player.y + toMove.y;
-	
-    if (isValid (*current, madeMove))
+
+    return toMove;
+}
+
+// The full update board after moving a box
+void updateState(sokoban* output, const pos& old_player, const pos& new_player, const pos& old_box, const pos& new_box)
+{
+    // Update player location
+    output->player.x = new_player.x;
+    output->player.y = new_player.y;
+
+    // Find the box that was moved and update its location
+    for (auto& box : output->boxes)
     {
-        if (hasBox (*current, madeMove))
+        if (box.x == old_box.x && box.y == old_box.y)
         {
-            pos boxMove;
-            boxMove.x = madeMove.x + toMove.x;
-            boxMove.y = madeMove.y + toMove.y;
-            if (isValid (*current, boxMove) && !hasBox (*current, boxMove))
+            box.x = new_box.x;
+            box.y = new_box.y;
+
+            // We move at most one box every action, so if we found it we can break out of the loop
+            break;
+        }
+    }
+
+    // Update the box action on the map
+    output->map [index (output->dim.x, output->dim.y, old_box.x, old_box.y)] = FREE;
+    output->map [index (output->dim.x, output->dim.y, old_player.x, old_player.y)] = FREE;
+
+    output->map [index (output->dim.x, output->dim.y, new_box.x, new_box.y)] = BOX;
+    output->map [index (output->dim.x, output->dim.y, new_player.x, new_player.y)] = PLAYER;
+
+    // Re-add any targets to the map that were covered up before
+    // TODO: We dont actually have to check every target, only the box and player ones
+    for (auto& target : output->targets)
+    {
+        const auto current_index = index (output->dim.x, output->dim.y, target.x, target.y);
+        if (output->map [current_index] == FREE) {
+            output->map [current_index] = TARGET;
+        }
+    }
+}
+
+// The partial update board if we only move a player and not a box
+void updateState(sokoban* output, const pos& old_player, const pos& new_player) {
+    // Update player location
+    output->player.x = new_player.x;
+    output->player.y = new_player.y;
+
+    // Update the map with the new player sprite
+    output->map [index (output->dim.x, output->dim.y, old_player.x, old_player.y)] = FREE;
+    output->map [index (output->dim.x, output->dim.y, new_player.x, new_player.y)] = PLAYER;
+
+    // Re-add any targets to the map that were covered up before
+    // TODO: We dont actually have to check every target, only the target the player was over
+    for (auto& target : output->targets)
+    {
+        const auto current_index = index(output->dim.x, output->dim.y, target.x, target.y);
+        if (output->map[current_index] == FREE) {
+            output->map[current_index] = TARGET;
+        }
+    }
+}
+
+bool checkSolved(const sokoban* const output) {
+    for (auto& target : output->targets)
+    {
+        if (output->map [index (output->dim.x, output->dim.y, target.x, target.y)] != BOX)
+            return false;
+    }
+    return true;
+}
+
+bool makeMove (const sokoban* const current, const char move, sokoban* output)
+{
+    if (output == nullptr) {
+        output = new_state();
+    }
+
+    *output = *current;
+
+    const pos move_delta = createMoveDelta(move);
+
+    const pos& old_player = current->player;
+    const pos new_player {
+        .y = old_player.y + move_delta.y,
+        .x = old_player.x + move_delta.x
+    };
+	
+    if (isValid (*current, new_player))
+    {
+        if (hasBox (*current, new_player))
+        {
+            const pos& old_box = new_player;
+            const pos new_box {
+                .y = old_box.y + move_delta.y,
+                .x = old_box.x + move_delta.x
+            };
+
+            if (isValid (*current, new_box) && !hasBox (*current, new_box))
             {
-                for (int i = 0; i < output->numOfBoxes; i++)
-                {
-                    auto it = output->boxes[i];
-                    if (it.x == madeMove.x && it.y == madeMove.y)
-                    {
-                        if (output->map [index (output->dim.x, output->dim.y, madeMove.x, madeMove.y)] == BOX)
-                        {
-                            output->boxes[i] = boxMove;
-                            output->map [index (output->dim.x, output->dim.y, output->player.x, output->player.y)] = FREE;
-                            output->map [index (output->dim.x, output->dim.y, madeMove.x, madeMove.y)] = PLAYER;
-                            output->map [index (output->dim.x, output->dim.y, boxMove.x, boxMove.y)] = BOX;
-                
-                            pos plyr, mdmv, bxmv;
-                            plyr.x = output->player.x;
-                            plyr.y = output->player.y;
-                            mdmv.x = madeMove.x;
-                            mdmv.y = madeMove.y;
-                            bxmv.x = boxMove.x;
-                            bxmv.y = boxMove.y;
-
-                            /*
-                            if (std::find (output->targets.begin(), output->targets.end(), plyr) != output->targets.end ())
-                            {
-                                output->map [index (output->dim.x, output->dim.y, output->player.x, output->player.y)] = TARGET;
-                            }
-                            
-                            if (std::find (output->targets.begin(), output->targets.end(), mdmv) != output->targets.end ())
-                            {
-                                output->numTargets++;
-                            }
-
-                            if (std::find (output->targets.begin(), output->targets.end(), bxmv) != output->targets.end ())
-                            {
-                                output->numTargets--;
-                            }
-                            */
-
-                        }
-                                
-                        output->player.x = madeMove.x;
-                        output->player.y = madeMove.y;
-                    }
-                }
+                updateState (output, old_player, new_player, old_box, new_box);
             }
         }
         else
         {
-            output->map [index (output->dim.x, output->dim.y, output->player.x, output->player.y)] = FREE;
-            output->map [index (output->dim.x, output->dim.y, madeMove.x, madeMove.y)] = PLAYER;
-            pos plyr;
-            plyr.x = output->player.x;
-            plyr.y = output->player.y;
-                
-            /*if (std::find (output->targets.begin(), output->targets.end(), plyr) != output->targets.end ())
-            {
-                output->map [index (output->dim.x, output->dim.y, output->player.x, output->player.y)] = TARGET;
-            }*/
-		    
-
-            output->player.x = madeMove.x;
-            output->player.y = madeMove.y;
+            updateState (output, old_player, new_player);
         }
     }
 
-	// *output = result;
+    return checkSolved(output);
+}
 
-    for (int i = 0; i < output->targets.size(); i++)
-    {
-        if (output->map [index (output->dim.x, output->dim.y, output->targets[i].x, output->targets[i].y)] != BOX) return false;
+bool inverseMove(const sokoban* const current, const char move, sokoban* output) {
+    if (output == nullptr) {
+        output = new_state();
     }
-    return true;
-    //return (output->numTargets == 0);
-    //return false;
+
+    *output = *current;
+
+    // Create two sets of moves.
+    // The forward move which is used to check for boxes and
+    // The inverse move, which moves the player and is used to check for validity
+    const pos move_delta = createMoveDelta(move);
+
+    const pos forward_move {
+        .y = output->player.y + move_delta.y,
+        .x = output->player.x + move_delta.x
+    };
+
+    const pos inverse_move {
+        .y = output->player.y - move_delta.y,
+        .x = output->player.x - move_delta.x
+    };
+
+    const pos& old_player = current->player;
+    const pos& new_player = inverse_move;
+
+    // Notice that only the inverse move has to be valid, since any boxes will always move into a valid position.
+    // However, we need to check if there is another box behind us because we can't push in this version.
+    if (isValid (*current, new_player) && !hasBox (*current, new_player)) {
+
+        // Now we check if the forward move has a box to see if we should pull something.
+        // Notice we dont need to check if there is another box in front of the current box
+        if (hasBox (*current, forward_move)) {
+            const pos& old_box = forward_move;
+
+            const pos new_box {
+                .y = old_box.y - move_delta.y,
+                .x = old_box.x - move_delta.x
+            };
+
+            updateState (output, old_player, new_player, old_box, new_box);
+        }
+        else {
+            updateState (output, old_player, new_player);
+        }
+    }
+
+    return checkSolved(output);
 }
 
 std::vector<bool> expand (const sokoban* const current, std::vector<sokoban*>& output)
@@ -315,6 +432,35 @@ std::vector<bool> expand (const sokoban* const current, std::vector<sokoban*>& o
 	}
 	
 	return solved;
+}
+
+bool randomSequence(const sokoban* const current, const int count, sokoban* output) {
+    const char moves[4] = {'U', 'R', 'D', 'L'};
+
+    bool result = false;
+    sokoban* state_1 = new_state();
+    sokoban* state_2 = new_state();
+
+    *state_1 = *current;
+
+    for (int i = 0; i < count; ++i) {
+        const int action = rand() % 4;
+
+        result = inverseMove(state_1, moves[action], state_2);
+
+        std::swap(state_1, state_2);
+    }
+
+    if (output == nullptr) {
+        output = new_state();
+    }
+
+    *output = *state_1;
+
+    delete_state(state_1);
+    delete_state(state_2);
+
+    return result;
 }
 
 bool isOnTarget (const pos& box, const sokoban* const state)

@@ -47,19 +47,14 @@ void delete_state(sokoban* state);
 
 void dump (const sokoban& game);
 sokoban* scan (const std::string& arg);
+sokoban *generate(const std::string &wall_file, int num_targets, int num_steps);
+
 bool makeMove (const sokoban* const current, const char move, sokoban* output);
+bool inverseMove(const sokoban* const current, const char move, sokoban* output);
+bool randomSequence(const sokoban* const current, const int length, sokoban* output);
 
 std::vector<bool> expand (const sokoban* const current, std::vector<sokoban*>& output);
 
-// bool isHorisontalPairing (const pos& box1, const pos& box2);
-// bool isVerticalPairing (const pos& box1, const pos& box2);
-// bool isBlockedFromTop (const pos& box1, const pos& box2, const sokoban* const state);
-// bool isBlockedFromBottom (const pos& box1, const pos& box2, const sokoban* const state);
-// bool isBlockedFromLeft (const pos& box1, const pos& box2, const sokoban* const state);
-// bool isBlockedFromRight (const pos& box1, const pos& box2, const sokoban* const state);
-
-// bool isOnTarget (const pos& box, const sokoban* state);
-// bool isBoxCornered (const pos& box, const sokoban* state);
 bool isDeadlocked (const sokoban* const state);
 
 #endif

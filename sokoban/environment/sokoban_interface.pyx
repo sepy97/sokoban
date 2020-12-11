@@ -40,8 +40,13 @@ cdef extern from "sokoban.h":
 
     void dump (const sokoban& game)
     sokoban* scan(const string& arg)
-    cdef bool makeMove(const sokoban* current, char move, sokoban* output)
+    sokoban* generate(const string& wall_file, int num_targets, int num_steps);
+
+    bool makeMove(const sokoban* const current, const char move, sokoban* output)
+    bool inverseMove(const sokoban* const current, const char move, sokoban* output)
+    
     vector[bool] expand (const sokoban* current, vector[sokoban*]& output)
+    bool randomSequence(const sokoban* const current, const int count, sokoban* output)
 
     bool isDeadlocked(const sokoban* state);
     
@@ -88,7 +93,23 @@ cdef class SokobanState:
         return expand_state(self)
 
     cpdef SokobanState next_state(self, int action):
-        return next_state(self, action)
+        cdef char move = action_to_string(action)
+        cdef sokoban *output = new_state();
+
+        cdef bool solved = makeMove(self._state, move, output)
+
+        return SokobanState.from_state(output, solved)
+
+    cpdef SokobanState previous_state(self, int action):
+        cdef char move = action_to_string(action)
+        cdef sokoban *output = new_state();
+
+        cdef bool solved = inverseMove(self._state, move, output)
+
+        return SokobanState.from_state(output, solved)
+
+    cpdef SokobanState random_sequence(self, int length):
+        return random_sequence(self, length)
 
     cpdef bool _dead_lock(self):
         return isDeadlocked(self._state)
@@ -157,6 +178,13 @@ cdef class SokobanState:
         return load_state(filepath)
 
     @staticmethod
+    def generate(wall_file, num_targets, num_steps):
+        if not Path(wall_file).exists():
+            raise FileNotFoundError()
+
+        return generate_state(wall_file, num_targets, num_steps)
+
+    @staticmethod
     cdef SokobanState from_state(sokoban *_state, bool solved, bool owner = True):
         cdef SokobanState wrapper = SokobanState.__new__(SokobanState)
         wrapper._state = _state
@@ -191,16 +219,19 @@ cpdef SokobanState load_state(str filepath):
     cdef sokoban* state = scan(filepath.encode('UTF-8'))
     return SokobanState.from_state(state, False)
 
-cpdef SokobanState next_state(SokobanState state, int action):
-    cdef char move = action_to_string(action)
-    cdef sokoban *output = new_state();
-
-    cdef bool solved = makeMove(state._state, move, output)
-
-    return SokobanState.from_state(output, solved)
-
 cpdef list expand_state(SokobanState state):
     cdef vector[sokoban*] output = new_state_vector()
     cdef vector[bool] solved = expand(state._state, output)
     
     return [SokobanState.from_state(output[i], solved[i]) for i in range(4)]
+
+cpdef SokobanState random_sequence(SokobanState state, int length):
+    cdef sokoban *output = new_state();
+
+    cdef bool solved = randomSequence(state._state, length, output)
+
+    return SokobanState.from_state(output, solved)
+
+cpdef SokobanState generate_state(str wall_file, int num_targets, int num_steps):
+        cdef sokoban* state = generate(wall_file.encode('UTF-8'), num_targets, num_steps)
+        return SokobanState.from_state(state, False)

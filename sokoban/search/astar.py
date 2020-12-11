@@ -3,7 +3,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Any, Mapping, Tuple, List, Optional
 
-from sokoban.environment.sokoban_interface import SokobanState, load_state, expand_state, next_state
+from sokoban.environment.sokoban_interface import SokobanState
 from sokoban.heuristics import BaseHeuristic
 
 TPath = Tuple[List[SokobanState], List[int]]
@@ -53,7 +53,7 @@ def Astar(start: SokobanState, heuristic: BaseHeuristic) -> Optional[TPath]:
             print(f"States explored: {len(parents)}")
             return Astar_path(start, state, parents)
 
-        children = expand_state(state)
+        children = state.expand()
         for action, child in enumerate(children):
             if child.dead_lock:
                 continue

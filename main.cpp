@@ -11,13 +11,15 @@
 
 int main(int argc, const char * argv[])
 {
-    std::string input = "sokoban00.txt";
+    srand((unsigned) time(0));
+//    std::string input = "sokoban00.txt";
+    std::string input = "./walls/0001.txt";
     if (argc >= 2)
     {
         input = std::string (argv[1]);
     }
     
-    sokoban* body = scan (input);
+    sokoban* body = generate(input, 2, 1000);
     sokoban* output = new_state();
     
     dump (*body);
@@ -38,7 +40,7 @@ int main(int argc, const char * argv[])
     std::cout << "Is box in a deadlock? " << iscornered << std::endl;
 
     // std::vector <sokoban> tmp = expand (output);
-/*    auto exp = new_state_vector(); // = (sokoban**) calloc (4, sizeof (sokoban*));
+    auto exp = new_state_vector(); // = (sokoban**) calloc (4, sizeof (sokoban*));
     expand (body, exp);
 
     std::cout << "Expanding moves: " << std:: endl;
@@ -49,7 +51,7 @@ int main(int argc, const char * argv[])
     for (auto& state : exp) {
         delete state;
     }
-*/
+
     delete body;
     delete output;
 }

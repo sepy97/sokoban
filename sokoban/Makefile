@@ -1,4 +1,3 @@
-
 compile:
 	$(MAKE) -C environment compile
 
