@@ -1,5 +1,6 @@
 from .base import BaseHeuristic
 from sokoban.environment import SokobanState
+from sokoban.heuristics import Hungarian	
 
 class HungarianHeuristic:
 	""" A hungarian heuristic """
