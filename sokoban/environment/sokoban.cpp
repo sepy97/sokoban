@@ -169,6 +169,8 @@ sokoban* scan (const std::string& arg)
 }
 
 sokoban* generate(const std::string &wall_file, int num_targets, int num_steps) {
+    srand((unsigned) time(0));
+    
     auto state = scan(wall_file);
     const auto size_x = state->dim.x;
     const auto size_y = state->dim.y;
