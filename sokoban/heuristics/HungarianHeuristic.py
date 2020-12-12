@@ -25,7 +25,7 @@ class HungarianHeuristic:
 
 		for i, box in enumerate(state.boxes):
 			for j, target in enumerate(state.targets):
-				costMatrix[i][j] = getDistances(metrics, box, target)  
+				costMatrix[i][j] = getDistances(self.metrics, box, target)  
 
 
 		hungarian = Hungarian(cost_matrix) #"http://github.com/tdedecko/hungarian-algorithm"
