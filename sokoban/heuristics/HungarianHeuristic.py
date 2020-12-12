@@ -28,7 +28,7 @@ class HungarianHeuristic:
 				costMatrix[i][j] = getDistances(self.metrics, box, target)  
 
 
-		hungarian = Hungarian(cost_matrix) #"http://github.com/tdedecko/hungarian-algorithm"
+		hungarian = Hungarian(costMatrix) #"http://github.com/tdedecko/hungarian-algorithm"
 		hungarian.calculate()
 
 		return float (hungarian.get_total_potential())
