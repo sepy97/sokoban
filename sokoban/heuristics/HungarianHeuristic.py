@@ -17,18 +17,18 @@ class HungarianHeuristic:
 			if metrics == 'Manhattan':
 				return distance.cityblock(box, target)
 			elif metrics == 'Euclidean':
-			return distance.seuclidean(box, target)
+				return distance.seuclidean(box, target)
 
 
 
-	costMatrix = np.zeros((len(state.boxes), len(state.targets)))
+		costMatrix = np.zeros((len(state.boxes), len(state.targets)))
 
-	for i, box in enumerate(state.boxes):
-		for j, target in enumerate(state.targets):
-			costMatrix[i][j] = getDistances(metrics, box, target)  
+		for i, box in enumerate(state.boxes):
+			for j, target in enumerate(state.targets):
+				costMatrix[i][j] = getDistances(metrics, box, target)  
 
 
-	hungarian = Hungarian(cost_matrix) #"http://github.com/tdedecko/hungarian-algorithm"
-	hungarian.calculate()
+		hungarian = Hungarian(cost_matrix) #"http://github.com/tdedecko/hungarian-algorithm"
+		hungarian.calculate()
 
-	return float (hungarian.get_total_potential())
+		return float (hungarian.get_total_potential())
