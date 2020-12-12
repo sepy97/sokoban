@@ -8,7 +8,7 @@ def getDistances(metrics, box, target):
 	if metrics == 'Manhattan':
 		return distance.cityblock(box, target)
 	elif metrics == 'Euclidean':
-		return distance.seuclidean(box, target)
+		return distance.euclidean(box, target)
 
 class HungarianHeuristic:
 	""" A hungarian heuristic """
