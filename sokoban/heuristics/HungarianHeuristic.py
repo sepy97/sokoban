@@ -11,7 +11,10 @@ def getDistances(metrics, box, target):
 
 class HungarianHeuristic:
 	""" A hungarian heuristic """
-	def __call__(self, state: SokobanState, metrics): 
+	def __init__(self, metrics):
+		self.metrics = metrics
+
+	def __call__(self, state: SokobanState): 
 		"""
 		boxes = state.boxes
 		targets = state.targets
