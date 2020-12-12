@@ -1,6 +1,6 @@
 from .base import BaseHeuristic
 from sokoban.environment import SokobanState
-from sokoban.heuristics import hungarian	
+from sokoban.heuristics.hungarian import Hungarian
 import numpy as np
 
 def getDistances(metrics, box, target):
