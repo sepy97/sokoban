@@ -12,12 +12,12 @@ class HungarianHeuristic:
 	metrics = Manhattan or Euclidean
 	"""
 
-	    def getDistances(metrics, box, target):
-	        from scipy.spatial import distance
-	        if metrics == 'Manhattan':
-	            return distance.cityblock(box, target)
-	        elif metrics == 'Euclidean':
-	            return distance.seuclidean(box, target)
+		def getDistances(metrics, box, target):
+			from scipy.spatial import distance
+			if metrics == 'Manhattan':
+				return distance.cityblock(box, target)
+			elif metrics == 'Euclidean':
+			return distance.seuclidean(box, target)
 
 
 
