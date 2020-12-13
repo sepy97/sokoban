@@ -2,8 +2,10 @@ from glob import glob
 from time import time
 from random import choice
 
+from argparse import ArgumentParser
+
 from sokoban import SokobanState, Astar
-from sokoban.heuristics import GreedyHeuristic, ManhattanHeuristic, EuclidHeuristic
+from sokoban.heuristics import GreedyHeuristic, ManhattanHeuristic, EuclidHeuristic, HungarianHeuristic
 
 def action_to_string(action):
     if action == 0:
@@ -15,11 +17,13 @@ def action_to_string(action):
     elif action == 3:
         return "L"
 
-def main():
-    walls = glob("./walls/*.txt")
+def main(walls: str, targets: int, steps: int):
+    walls = glob(f"{walls}/*.txt")
 
-    state = SokobanState.generate(choice(walls), num_targets=2, num_steps=10_000)
-    heuristic = ManhattanHeuristic()
+    state = SokobanState.generate(choice(walls), num_targets=targets, num_steps=steps)
+
+    heuristic = HungarianHeuristic("Manhattan")
+    # heuristic = ManhattanHeuristic()
 
     print("Initial State")
     print("-" * 70)
@@ -40,4 +44,10 @@ def main():
         state.display()
 
 if __name__ == "__main__":
-    main()
+    parser = ArgumentParser()
+
+    parser.add_argument('-w', "--walls", type=str, default='./walls', help="Directory with special wall files.")
+    parser.add_argument('-t', "--targets", type=int, default=2, help="Number of targets to generate.")
+    parser.add_argument('-s', "--steps", type=int, default=10_000, help="Number of steps to take when generating.")
+
+    main(**parser.parse_args().__dict__)

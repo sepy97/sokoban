@@ -46,8 +46,8 @@ void dump (const sokoban& game)
     {
         for (int j = 0; j < game.dim.x; j++)
         {
-                const auto board_idx = index(game.dim.x, game.dim.y, j, i);
- //               printf ("%d ", game.map[board_idx]);
+            const auto board_idx = index(game.dim.x, game.dim.y, j, i);
+            //               printf ("%d ", game.map[board_idx]);
             switch (game.map[board_idx])
             {
                 case FREE:
@@ -81,21 +81,33 @@ void dump (const sokoban& game)
     }
 }
 
+int countBlanks (const sokoban* const game)
+{
+    int count = 0;
+
+    for (const auto& elem : game->map) {
+        if (elem == FREE)
+            count++;
+    }
+
+    return count;
+}
+
 sokoban* scan (const std::string& arg)
 {
     std::ifstream myfile (arg.c_str());
-    
+
     sokoban* result = new sokoban;
     int sizeH = 0, sizeV = 0;
-    
+
     if (myfile.is_open())
     {
         myfile >> sizeH;
         myfile >> sizeV;
     }
-    
+
     // result->map = new square[sizeH * sizeV];
-    
+
     for (int y = 0; y < sizeV; y++)
     {
         for (int x = 0; x < sizeH; x++)
@@ -111,7 +123,7 @@ sokoban* scan (const std::string& arg)
 
     int numOfWalls = 0;
     myfile >> numOfWalls;
-    
+
     for (int i = 0; i < numOfWalls; i++)
     {
         int x = 0, y = 0;
@@ -139,7 +151,7 @@ sokoban* scan (const std::string& arg)
 
     int numOfTargets = 0;
     myfile >> numOfTargets;
-   // output->numTargets = numOfTargets;
+    // output->numTargets = numOfTargets;
     for (int i = 0; i < numOfTargets; i++)
     {
         int x = 0, y = 0;
@@ -151,10 +163,10 @@ sokoban* scan (const std::string& arg)
         result->targets.push_back (tmp);
 
         const int target_idx = index (sizeH, sizeV, x - 1, y - 1);
-    //    if (output->map[target_idx] == BOX) output->numTargets--;
+        //    if (output->map[target_idx] == BOX) output->numTargets--;
         result->map[target_idx] = TARGET;
     }
-        
+
     int player_x = 0, player_y = 0;
     myfile >> player_y >> player_x;
     result->player.x = player_x-1;
@@ -170,10 +182,14 @@ sokoban* scan (const std::string& arg)
 
 sokoban* generate(const std::string &wall_file, int num_targets, int num_steps) {
     srand((unsigned) time(0));
-    
+
     auto state = scan(wall_file);
     const auto size_x = state->dim.x;
     const auto size_y = state->dim.y;
+
+//    dump(*state);
+    num_targets = std::min(num_targets, countBlanks(state) - 2);
+    num_targets = std::max(num_targets, 1);
 
     int x, y;
 
@@ -192,8 +208,8 @@ sokoban* generate(const std::string &wall_file, int num_targets, int num_steps) 
     }
 
     bool found_location = false;
-    for (auto& delta : {-1, 1}) {
-        for (auto& vertical : {false, true}) {
+    for (const auto& delta : {-1, 1}) {
+        for (const auto& vertical : {false, true}) {
             const auto player_x = vertical ? x : x + delta;
             const auto player_y = vertical ? y + delta : y;
             const auto current_index = index(size_x, size_y, player_x, player_y);
@@ -207,11 +223,29 @@ sokoban* generate(const std::string &wall_file, int num_targets, int num_steps) 
         }
     }
 
+    // Backup strat, just find a location to place the player
     if (!found_location) {
-        printf("No location found for player, very bad wall configuration!");
+        for (int player_y = 0; !found_location && player_y < state->dim.y; player_y++) {
+            for (int player_x = 0; player_x < state->dim.x; player_x++) {
+                const auto board_idx = index(state->dim.x, state->dim.y, player_x, player_y);
+                if (state->map[board_idx] == FREE) {
+                    state->map[board_idx] = PLAYER;
+                    state->player.x = player_x;
+                    state->player.y = player_y;
+                    found_location = true;
+                    break;
+                }
+            }
+        }
     }
 
-    dump(*state);
+    // Backup backup, just try again.
+    if (!found_location) {
+        delete_state(state);
+        return generate(wall_file, num_targets, num_steps);
+    }
+
+//    dump(*state);
     auto output = new_state();
     randomSequence(state, num_steps, output);
 
@@ -223,11 +257,11 @@ constexpr bool isValid (const sokoban& current, const pos& move)
 {
     if (move.y >= 0 and move.x < current.dim.x and move.y >= 0 and move.y < current.dim.y)
     {
-        return (current.map[index (current.dim.x, current.dim.y, move.x, move.y)] != WALL); 
+        return (current.map[index (current.dim.x, current.dim.y, move.x, move.y)] != WALL);
     }
     else
     {
-        return false; 
+        return false;
     }
 }
 
@@ -345,18 +379,18 @@ bool makeMove (const sokoban* const current, const char move, sokoban* output)
 
     const pos& old_player = current->player;
     const pos new_player {
-        .y = old_player.y + move_delta.y,
-        .x = old_player.x + move_delta.x
+            .y = old_player.y + move_delta.y,
+            .x = old_player.x + move_delta.x
     };
-	
+
     if (isValid (*current, new_player))
     {
         if (hasBox (*current, new_player))
         {
             const pos& old_box = new_player;
             const pos new_box {
-                .y = old_box.y + move_delta.y,
-                .x = old_box.x + move_delta.x
+                    .y = old_box.y + move_delta.y,
+                    .x = old_box.x + move_delta.x
             };
 
             if (isValid (*current, new_box) && !hasBox (*current, new_box))
@@ -386,13 +420,13 @@ bool inverseMove(const sokoban* const current, const char move, sokoban* output)
     const pos move_delta = createMoveDelta(move);
 
     const pos forward_move {
-        .y = output->player.y + move_delta.y,
-        .x = output->player.x + move_delta.x
+            .y = output->player.y + move_delta.y,
+            .x = output->player.x + move_delta.x
     };
 
     const pos inverse_move {
-        .y = output->player.y - move_delta.y,
-        .x = output->player.x - move_delta.x
+            .y = output->player.y - move_delta.y,
+            .x = output->player.x - move_delta.x
     };
 
     const pos& old_player = current->player;
@@ -408,8 +442,8 @@ bool inverseMove(const sokoban* const current, const char move, sokoban* output)
             const pos& old_box = forward_move;
 
             const pos new_box {
-                .y = old_box.y - move_delta.y,
-                .x = old_box.x - move_delta.x
+                    .y = old_box.y - move_delta.y,
+                    .x = old_box.x - move_delta.x
             };
 
             updateState (output, old_player, new_player, old_box, new_box);
@@ -424,16 +458,16 @@ bool inverseMove(const sokoban* const current, const char move, sokoban* output)
 
 std::vector<bool> expand (const sokoban* const current, std::vector<sokoban*>& output)
 {
-	//std::vector <sokoban> result;
-	const char moves[4] = {'U', 'R', 'D', 'L'};
+    //std::vector <sokoban> result;
+    const char moves[4] = {'U', 'R', 'D', 'L'};
     std::vector<bool> solved(4);
 
     //try to parallelize this loop with omp
-	for (int i = 0; i < 4; i++) {
-		solved[i] = makeMove (current, moves[i], output[i]);
-	}
-	
-	return solved;
+    for (int i = 0; i < 4; i++) {
+        solved[i] = makeMove (current, moves[i], output[i]);
+    }
+
+    return solved;
 }
 
 bool randomSequence(const sokoban* const current, const int count, sokoban* output) {
@@ -483,7 +517,7 @@ constexpr bool isBoxCornered (const pos& box, const sokoban* const state)
     else if (box.x == 0 && box.y == state->dim.y-1)
     {
         return true;
-        
+
     }
     else if (box.y == 0 && box.x == state->dim.x-1)
     {
@@ -523,7 +557,7 @@ constexpr bool isBoxCornered (const pos& box, const sokoban* const state)
             if (state->map[index (state->dim.x, state->dim.y, box.x+1, box.y)] == WALL && state->map[index (state->dim.x, state->dim.y, box.x, box.y+1)] == WALL) return true;
         }
     }
-    
+
     return false;
 }
 
@@ -599,20 +633,20 @@ bool isDeadlocked (const sokoban* const state)
                 if (isHorisontalPairing (state->boxes[i], state->boxes[j]))
                 {
                     if (isBlockedFromTop (state->boxes[i], state->boxes[j], state)) return true;
-                        
+
                     if (isBlockedFromBottom (state->boxes[i], state->boxes[j], state)) return true;
-                        
+
                 }
                 else if (isVerticalPairing (state->boxes[i], state->boxes[j]))
                 {
                     if (isBlockedFromLeft (state->boxes[i], state->boxes[j], state)) return true;
-                            
+
                     if (isBlockedFromRight (state->boxes[i], state->boxes[j], state)) return true;
-                            
+
                 }
             }
         }
     }
-    
+
     return false;
 }
