@@ -25,7 +25,7 @@ def main(wall: str, targets: int, steps: int):
     heuristics = [      ManhattanHeuristic () ,             # greedy manhattan
                         EuclidHeuristic ()  ,               # greedy euclid
                         HungarianHeuristic ("Manhattan") ,  # hungarian manhattan
-                        HungarianHeuristic ("Euclidian") ,  # hungarian euclid
+                        HungarianHeuristic ("Euclidean") ,  # hungarian euclid
     ]  
 
     times = [0,0,0,0]
@@ -38,7 +38,7 @@ def main(wall: str, targets: int, steps: int):
         times[i] = 1000 * (t1 - t0)
 
     print ("executed successfully!")
-    
+
     for i in range (4):
         print (times[i])
 '''     

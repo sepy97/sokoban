@@ -22,7 +22,8 @@ def main(walls: str, targets: int, steps: int):
 
     state = SokobanState.generate(choice(walls), num_targets=targets, num_steps=steps)
 
-    heuristic = HungarianHeuristic("Manhattan")
+    heuristic = HungarianHeuristic("Euclidean")
+    #heuristic = HungarianHeuristic("Manhattan")
     # heuristic = ManhattanHeuristic()
 
     print("Initial State")
