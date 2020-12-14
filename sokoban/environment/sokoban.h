@@ -52,6 +52,7 @@ sokoban *generate(const std::string &wall_file, int num_targets, int num_steps);
 bool makeMove (const sokoban* const current, const char move, sokoban* output);
 bool inverseMove(const sokoban* const current, const char move, sokoban* output);
 bool randomSequence(const sokoban* const current, const int length, sokoban* output);
+bool checkSolved(const sokoban* const output);
 
 std::vector<bool> expand (const sokoban* const current, std::vector<sokoban*>& output);
 

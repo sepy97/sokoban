@@ -41,6 +41,7 @@ cdef extern from "sokoban.h":
     void dump (const sokoban& game)
     sokoban* scan(const string& arg)
     sokoban* generate(const string& wall_file, int num_targets, int num_steps);
+    bool checkSolved(const sokoban* const output);
 
     bool makeMove(const sokoban* const current, const char move, sokoban* output)
     bool inverseMove(const sokoban* const current, const char move, sokoban* output)
@@ -233,5 +234,6 @@ cpdef SokobanState random_sequence(SokobanState state, int length):
     return SokobanState.from_state(output, solved)
 
 cpdef SokobanState generate_state(str wall_file, int num_targets, int num_steps):
-        cdef sokoban* state = generate(wall_file.encode('UTF-8'), num_targets, num_steps)
-        return SokobanState.from_state(state, False)
+    cdef sokoban* state = generate(wall_file.encode('UTF-8'), num_targets, num_steps)
+    cdef bool solved = checkSolved(state)
+    return SokobanState.from_state(state, solved)
