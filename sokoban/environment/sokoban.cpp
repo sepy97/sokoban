@@ -20,16 +20,23 @@ sokoban* new_state() {
     return new sokoban;
 }
 
+// Dummy function that is necessary to dynamically create the sokoban struct from python.
+std::vector<sokoban*> new_state_vector() {
+    return {new_state(), new_state(), new_state(), new_state()};
+}
+
+// Dummy function that is necessary to dynamically create the sokoban struct from python.
+std::vector<sokoban*> new_state_vector(const int size) {
+    std::vector<sokoban*> output(4 * size);
+    std::generate(output.begin(), output.end(), new_state);
+    return output;
+}
+
 // Dummy function that is necessary to dynamically copy a sokoban struct from python
 sokoban* copy_state(const sokoban* const state) {
     sokoban* output = new_state();
     *output = *state;
     return output;
-}
-
-// Dummy function that is necessary to dynamically create the sokoban struct from python.
-std::vector<sokoban*> new_state_vector() {
-    return {new_state(), new_state(), new_state(), new_state()};
 }
 
 // Dummy function that is necessary to clean up struct memory from python.
@@ -79,18 +86,6 @@ void dump (const sokoban& game)
         }
         printf ("\n");
     }
-}
-
-int countBlanks (const sokoban* const game)
-{
-    int count = 0;
-
-    for (const auto& elem : game->map) {
-        if (elem == FREE)
-            count++;
-    }
-
-    return count;
 }
 
 sokoban* scan (const std::string& arg)
@@ -178,6 +173,18 @@ sokoban* scan (const std::string& arg)
     }
 
     return result;
+}
+
+int countBlanks (const sokoban* const game)
+{
+    int count = 0;
+
+    for (const auto& elem : game->map) {
+        if (elem == FREE)
+            count++;
+    }
+
+    return count;
 }
 
 sokoban* generate(const std::string &wall_file, int num_targets, int num_steps) {
@@ -466,6 +473,24 @@ std::vector<bool> expand (const sokoban* const current, std::vector<sokoban*>& o
     for (int i = 0; i < 4; i++) {
         solved[i] = makeMove (current, moves[i], output[i]);
     }
+
+    return solved;
+}
+
+std::vector<bool> parallelExpand (const std::vector<sokoban*>& current, std::vector<sokoban*>& output)
+{
+    //std::vector <sokoban> result;
+    const char moves[4] = {'U', 'R', 'D', 'L'};
+    std::vector<bool> solved(output.size());
+
+     #pragma omp parallel for
+    for (int state = 0; state < current.size(); ++state) {
+        for (int i = 0; i < 4; ++i) {
+            const auto output_index = 4 * state + i;
+            solved[output_index] = makeMove(current[state], moves[i], output[output_index]);
+        }
+    }
+
 
     return solved;
 }

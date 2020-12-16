@@ -34,28 +34,26 @@ typedef struct sokoban
     std::vector<square> map;
     std::vector<pos> boxes;
     std::vector<pos> targets;
-   // int numTargets;
 } sokoban;
 
-using TStateVector = std::tuple<sokoban*, sokoban*, sokoban*, sokoban*>;
-using TResultVector = std::tuple<bool, bool, bool, bool>;
-
 sokoban* new_state();
-sokoban* copy_state(const sokoban* const state);
 std::vector<sokoban*> new_state_vector();
+std::vector<sokoban*> new_state_vector(const int size);
+sokoban* copy_state(const sokoban* const state);
 void delete_state(sokoban* state);
 
 void dump (const sokoban& game);
 sokoban* scan (const std::string& arg);
 sokoban *generate(const std::string &wall_file, int num_targets, int num_steps);
 
+bool checkSolved(const sokoban* const output);
+bool isDeadlocked (const sokoban* const state);
+
 bool makeMove (const sokoban* const current, const char move, sokoban* output);
 bool inverseMove(const sokoban* const current, const char move, sokoban* output);
 bool randomSequence(const sokoban* const current, const int length, sokoban* output);
-bool checkSolved(const sokoban* const output);
 
 std::vector<bool> expand (const sokoban* const current, std::vector<sokoban*>& output);
-
-bool isDeadlocked (const sokoban* const state);
+std::vector<bool> parallelExpand (const std::vector<sokoban*>& current, std::vector<sokoban*>& output);
 
 #endif
