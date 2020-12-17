@@ -34,6 +34,15 @@ typedef struct sokoban
     std::vector<square> map;
     std::vector<pos> boxes;
     std::vector<pos> targets;
+
+    bool const operator==(const sokoban &o) const {
+        return this->map == o.map;
+    }
+
+    bool const operator<(const sokoban &o) const {
+        return this->map < o.map;
+    }
+
 } sokoban;
 
 sokoban* new_state();

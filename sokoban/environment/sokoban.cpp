@@ -158,8 +158,8 @@ sokoban* scan (const std::string& arg)
         result->targets.push_back (tmp);
 
         const int target_idx = index (sizeH, sizeV, x - 1, y - 1);
-        //    if (output->map[target_idx] == BOX) output->numTargets--;
-        result->map[target_idx] = TARGET;
+        if (result->map[target_idx] == FREE)
+            result->map[target_idx] = TARGET;
     }
 
     int player_x = 0, player_y = 0;

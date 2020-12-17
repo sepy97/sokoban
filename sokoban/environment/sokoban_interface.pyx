@@ -7,6 +7,7 @@ from libc.stdint cimport uint8_t, int32_t, int64_t, uint64_t
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 from libcpp.queue cimport priority_queue
+from libcpp.map cimport map
 from libcpp.pair cimport pair
 from libcpp cimport bool
 
@@ -258,6 +259,29 @@ cpdef SokobanState[::1] parallel_expand(SokobanState[::1] states):
     return np.array([SokobanState.from_state(output[i], solved[i]) for i in range(4 * states.shape[0])])
 
 
+cdef void _states_to_numpy(vector[sokoban*] states, uint8_t[:, :, ::1] output, uint64_t size):
+    cdef uint64_t i, j, k, x_offset, y_offset
+    cdef sokoban* state
+    cdef uint8_t[:, ::1] state_buffer
+
+    for i in range(states.size()):
+        state = states[i]
+        state_buffer = <uint8_t[:state.dim.x, :state.dim.y]> <uint8_t*> state.map.data()
+
+        x_offset = (size - state.dim.x) // 2
+        y_offset = (size - state.dim.y) // 2
+        for j in range(state.dim.x):
+            for i in range(state.dim.y):
+                output[i, x_offset + j, y_offset + k] = state_buffer[j, k]
+
+
+# cpdef states_to_numpy(SokobanState[::1] states, uint64_t size):
+#     cdef vector[sokoban*] _states
+#     for i in range(states.shape[0]):
+#         _states.push_back(states[i]._state)
+#
+#     cdef uint8_t[:, :, ::1] output = np.full((_states.size(), size, size))
+
 cdef class AstarData:
     cdef uint64_t current_length
     cdef uint64_t current_size
@@ -266,10 +290,10 @@ cdef class AstarData:
     cdef int64_t[::1] actions
     cdef float[::1] costs
     cdef int64_t[::1] state_table
-    cdef SokobanState[::1] inverse_state_mapping
 
     cdef priority_queue[pair[float, int64_t]] open_set
-    cdef dict state_mapping
+    cdef vector[pair[sokoban, bool]] inverse_state_mapping
+    cdef map[sokoban, int64_t] state_mapping
 
     def __init__(self, initial_size = 1024):
         self.current_length = 0
@@ -279,19 +303,18 @@ cdef class AstarData:
         self.actions = np.full(initial_size, -1, dtype=np.int64)
         self.costs = np.full(initial_size, np.inf, dtype=np.float32)
         self.state_table = np.full(initial_size, np.iinfo(np.int64).max, dtype=np.int64)
-        self.inverse_state_mapping = np.empty(initial_size, np.object)
-
-        self.state_mapping = {}
 
     def __len__(self):
         return self.current_length
 
     cpdef add(self, SokobanState state):
-        if state in self.state_mapping:
+        cdef sokoban _state = deref(state._state)
+        cdef bool solved = state._solved
+
+        if self.state_mapping.find(_state) != self.state_mapping.end():
             return
 
         cdef int64_t[::1] new_state_table
-        cdef int64_t[::1] new_parents
         cdef int64_t[::1] new_actions
         cdef float[::1] new_costs
 
@@ -302,22 +325,19 @@ cdef class AstarData:
             new_actions = np.full(self.current_size, -1, dtype=np.int64)
             new_costs = np.full(self.current_size, np.inf, dtype=np.float32)
             new_state_table = np.full(self.current_size, np.iinfo(np.int64).max, dtype=np.int64)
-            new_inverse_state_mapping = np.empty(self.current_size, np.object)
 
             new_costs[:self.current_length] = self.costs[:]
             new_parents[:self.current_length] = self.parents[:]
             new_actions[:self.current_length] = self.actions[:]
             new_state_table[:self.current_length] = self.state_table[:]
-            new_inverse_state_mapping[:self.current_length] = self.inverse_state_mapping[:]
 
             self.costs = new_costs
             self.parents = new_parents
             self.actions = new_actions
             self.state_table = new_state_table
-            self.inverse_state_mapping = new_inverse_state_mapping
 
-        self.state_mapping[state] = self.current_length
-        self.inverse_state_mapping[self.current_length] = state
+        self.state_mapping[_state] = self.current_length
+        self.inverse_state_mapping.push_back(pair[sokoban, bool](_state, solved))
 
         self.current_length += 1
 
@@ -336,18 +356,19 @@ cdef class AstarData:
 
         return top.second
 
-    cpdef push(self, state, priority):
+    cpdef void push(self, SokobanState state, float priority):
         self.add(state)
         self.push_id(self.state_to_id(state), priority)
 
-    cpdef pop(self):
-        return self.id_to_state(self.pop())
+    cpdef SokobanState pop(self):
+        return self.id_to_state(self.pop_id())
 
     cpdef int64_t state_to_id(self, SokobanState state):
-        return self.state_mapping[state]
+        return self.state_mapping[deref(state._state)]
 
     cpdef SokobanState id_to_state(self, int64_t id):
-        return self.inverse_state_mapping[id]
+        cdef pair[sokoban, bool]* state = &self.inverse_state_mapping[id]
+        return SokobanState.from_state(&deref(state).first, deref(state).second, False)
 
     cpdef extract_path(self, start, goal):
         path = []
@@ -357,7 +378,7 @@ cdef class AstarData:
         state_id = self.state_to_id(goal)
 
         while state_id != start_id:
-            path.append(self.id_to_state(state_id))
+            path.append(SokobanState(self.id_to_state(state_id)))
             action = self.actions[state_id]
             state_id = self.parents[state_id]
             actions.append(action)
@@ -373,14 +394,14 @@ cdef class AstarData:
         cdef uint64_t i
         cdef int64_t state_id
         cdef int64_t[::1] state_ids = np.empty(size, np.int64)
-        states = np.empty(size, np.object)
+        cdef list states = []
 
         for i in range(size):
             state_id = self.pop_id()
             state_ids[i] = state_id
-            states[i] = self.inverse_state_mapping[state_id]
+            states.append(self.id_to_state(state_id))
 
-        return states, state_ids
+        return np.array(states), state_ids
 
     cpdef SokobanState check_solved(self, SokobanState[::1] states):
         cdef uint64_t i
