@@ -5,7 +5,7 @@ from random import choice
 from argparse import ArgumentParser
 
 from sokoban import SokobanState, Astar
-from sokoban.heuristics import GreedyHeuristic, ManhattanHeuristic, EuclidHeuristic, HungarianHeuristic
+from sokoban.heuristics import GreedyHeuristic, ManhattanHeuristic, EuclidHeuristic, HungarianHeuristic, QLearningHeuristic
 
 def action_to_string(action):
     if action == 0:
@@ -22,7 +22,8 @@ def main(walls: str, targets: int, steps: int):
 
     state = SokobanState.generate(choice(walls), num_targets=targets, num_steps=steps)
 
-    heuristic = HungarianHeuristic("Manhattan")
+    heuristic = QLearningHeuristic("./qlearning_weights/convolution_network_1.torch")
+    # heuristic = HungarianHeuristic("Manhattan")
     # heuristic = ManhattanHeuristic()
 
     print("Initial State")

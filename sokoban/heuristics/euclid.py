@@ -3,7 +3,7 @@ from sokoban.environment import SokobanState
 import numpy as np
 import math
 
-class EuclidHeuristic:
+class EuclidHeuristic(BaseHeuristic):
     """ A euclid greedy heuristic. """
     def __call__(self, state: SokobanState) -> float:
         result = 0.0

@@ -15,8 +15,8 @@ def action_to_string(action):
 if __name__ == "__main__":
     state = SokobanState.load("./sokoban01.txt")
     
-    heuristic = HungarianHeuristic('Manhattan')
-    #heuristic = HungarianHeuristic('Euclidean')
+    #heuristic = HungarianHeuristic('Manhattan')
+    heuristic = HungarianHeuristic('Euclidean')
 
     print("Initial State")
     print("-" * 70)

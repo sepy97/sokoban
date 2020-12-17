@@ -11,9 +11,11 @@ def getDistances(metrics, box, target):
 	elif metrics == 'Euclidean':
 		return fastdist.euclidean(box, target)
 
-class HungarianHeuristic:
+class HungarianHeuristic(BaseHeuristic):
 	""" A hungarian heuristic """
 	def __init__(self, metrics):
+		super(HungarianHeuristic, self).__init__()
+
 		self.metrics = metrics
 
 	def __call__(self, state: SokobanState): 

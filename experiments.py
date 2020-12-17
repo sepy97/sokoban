@@ -25,7 +25,7 @@ def main(wall: str, targets: int, steps: int):
     heuristics = [      ManhattanHeuristic () ,             # greedy manhattan
                         EuclidHeuristic ()  ,               # greedy euclid
                         HungarianHeuristic ("Manhattan") ,  # hungarian manhattan
-                        HungarianHeuristic ("Euclidian") ,  # hungarian euclid
+                        HungarianHeuristic ("Euclidean") ,  # hungarian euclid
     ]  
 
     times = [0,0,0,0]
@@ -38,19 +38,10 @@ def main(wall: str, targets: int, steps: int):
         times[i] = 1000 * (t1 - t0)
 
     print ("executed successfully!")
-    
+
     for i in range (4):
         print (times[i])
-'''     
-    print("Solution Found!")
-    print("-" * 70)
-    print(f"Actions: {' '.join(map(action_to_string, actions))}")
-    print(f"Time taken: {1000 * (t1 - t0)} ms.")
 
-    input("Press enter to display the solution as a sequence of states.")
-    for state in states:
-        state.display()
-'''
 if __name__ == "__main__":
     parser = ArgumentParser()
 

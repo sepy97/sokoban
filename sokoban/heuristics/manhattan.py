@@ -2,7 +2,7 @@ from .base import BaseHeuristic
 from sokoban.environment import SokobanState
 import numpy as np
 
-class ManhattanHeuristic:
+class ManhattanHeuristic(BaseHeuristic):
     """ A manhattan greedy heuristic. """
     def __call__(self, state: SokobanState) -> float:
         result = 0.0

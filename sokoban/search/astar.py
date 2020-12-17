@@ -2,6 +2,7 @@ from queue import PriorityQueue
 from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Any, Mapping, Tuple, List, Optional
+from heapq import heappop, heappush
 
 from sokoban.environment.sokoban_interface import SokobanState
 from sokoban.heuristics import BaseHeuristic
@@ -34,18 +35,18 @@ def Astar(start: SokobanState, heuristic: BaseHeuristic) -> Optional[TPath]:
     # Initialize search data structures
     parents: Mapping[SokobanState, Tuple[SokobanState, int]] = defaultdict(lambda: None)
     costs: Mapping[SokobanState, float] = defaultdict(lambda: float('inf'))
-    open_set: PriorityQueue[PrioritizedItem] = PriorityQueue()
+    open_set: List[PrioritizedItem] = []
     
     # Hashing
     state_table = dict ({})
 
     # Add the start state at the from of the queue and set its path to 0.
-    open_set.put(PrioritizedItem(0, start))
+    heappush(open_set, PrioritizedItem(0, start))
     costs[start] = 0
     num_of_moves = 0
     
-    while not open_set.empty():
-        state = open_set.get().item
+    while len(open_set) > 0:
+        state = heappop(open_set).item
         state_cost = costs[state]
         num_of_moves += 1
         
@@ -67,5 +68,5 @@ def Astar(start: SokobanState, heuristic: BaseHeuristic) -> Optional[TPath]:
             if cost < costs[child]:
                 parents[child] = (state, action)
                 costs[child] = cost
-                open_set.put(PrioritizedItem(cost + heuristic(child), child))
+                heappush(open_set, PrioritizedItem(cost + heuristic(child), child))
     return None
