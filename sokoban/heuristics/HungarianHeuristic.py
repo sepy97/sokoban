@@ -1,6 +1,7 @@
 from .base import BaseHeuristic
 from sokoban.environment import SokobanState
 from sokoban.heuristics.hungarian import Hungarian
+from fastdist import fastdist
 import numpy as np
 
 def getDistances(metrics, box, target):
@@ -8,7 +9,7 @@ def getDistances(metrics, box, target):
 	if metrics == 'Manhattan':
 		return distance.cityblock(box, target)
 	elif metrics == 'Euclidean':
-		return distance.euclidean(box, target)
+		return fastdist.euclidean(box, target)
 
 class HungarianHeuristic:
 	""" A hungarian heuristic """
