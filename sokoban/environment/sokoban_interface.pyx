@@ -1,6 +1,7 @@
 # cython: language_level=3, boundscheck=False, wraparound=False, overflowcheck=False, cdivision=True, initializedcheck=False, binding=False, embedsignature=True
 
 from cython.operator cimport dereference as deref
+from cython.parallel cimport prange
 
 from libc.stdint cimport uint8_t, int32_t, int64_t, uint64_t
 
@@ -259,28 +260,34 @@ cpdef SokobanState[::1] parallel_expand(SokobanState[::1] states):
     return np.array([SokobanState.from_state(output[i], solved[i]) for i in range(4 * states.shape[0])])
 
 
-cdef void _states_to_numpy(vector[sokoban*] states, uint8_t[:, :, ::1] output, uint64_t size):
+cdef void _states_to_numpy(vector[sokoban*] states, uint8_t[:, :, ::1] output, uint64_t size) nogil:
     cdef uint64_t i, j, k, x_offset, y_offset
     cdef sokoban* state
-    cdef uint8_t[:, ::1] state_buffer
+    cdef uint8_t* state_buffer
+    # cdef uint8_t[:, ::1] state_buffer
 
-    for i in range(states.size()):
+    for i in prange(states.size()):
         state = states[i]
-        state_buffer = <uint8_t[:state.dim.x, :state.dim.y]> <uint8_t*> state.map.data()
+        state_buffer = <uint8_t*> state.map.data()
+        # state_buffer = <uint8_t[:state.dim.x, :state.dim.y]> <uint8_t*> state.map.data()
 
         x_offset = (size - state.dim.x) // 2
         y_offset = (size - state.dim.y) // 2
         for j in range(state.dim.x):
-            for i in range(state.dim.y):
-                output[i, x_offset + j, y_offset + k] = state_buffer[j, k]
+            for k in range(state.dim.y):
+                output[i, y_offset + k, x_offset + j] = state_buffer[k * state.dim.x + j]
 
 
-# cpdef states_to_numpy(SokobanState[::1] states, uint64_t size):
-#     cdef vector[sokoban*] _states
-#     for i in range(states.shape[0]):
-#         _states.push_back(states[i]._state)
-#
-#     cdef uint8_t[:, :, ::1] output = np.full((_states.size(), size, size))
+cpdef states_to_numpy(SokobanState[::1] states, uint64_t size):
+    cdef vector[sokoban*] _states
+    for i in range(states.shape[0]):
+        _states.push_back(states[i]._state)
+
+    cdef uint8_t[:, :, ::1] output = np.full((_states.size(), size, size), 4, np.uint8)
+
+    _states_to_numpy(_states, output, size)
+
+    return np.asarray(output)
 
 cdef class AstarData:
     cdef uint64_t current_length

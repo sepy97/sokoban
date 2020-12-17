@@ -7,7 +7,7 @@ import numpy
 # "astar.pyx",
 ext = [
        Extension("sokoban_interface", ["sokoban_interface.pyx", "sokoban.cpp"],
-                 extra_compile_args=["-Ofast", "-march=native", "-std=c++14"],
+                 extra_compile_args=["-Ofast", "-march=native", "-std=c++14", '-fopenmp'],
                  extra_link_args=['-fopenmp'],
                  language="c++")
        ]

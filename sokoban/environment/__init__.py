@@ -1,1 +1,1 @@
-from .sokoban_interface import SokobanState, parallel_expand, AstarData
+from .sokoban_interface import SokobanState, parallel_expand, AstarData, states_to_numpy

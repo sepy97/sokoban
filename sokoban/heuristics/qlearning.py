@@ -1,5 +1,5 @@
 from .base import BaseHeuristic
-from sokoban.environment import SokobanState
+from sokoban.environment import SokobanState, states_to_numpy
 
 from typing import List
 import numpy as np
@@ -35,7 +35,9 @@ class QLearningHeuristic(BaseHeuristic):
         return self.network(self.state_to_nnet_input(state)).min().item()
 
     def batch_call(self, states: List[SokobanState]) -> List[float]:
-        states = self.torch.stack([self.state_to_nnet_input(state).squeeze() for state in states])
+        # states = self.torch.stack([self.state_to_nnet_input(state).squeeze() for state in states])
+        states = states_to_numpy(states, self.max_size)
+        states = self.torch.from_numpy(states)
 
         if self.cuda:
             states = states.cuda()
