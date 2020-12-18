@@ -36,7 +36,7 @@ def main(map: str, setup: int):
                    ("Manhattan Hungarian", HungarianHeuristic("Manhattan")),
                    ("Euclidean Hungarian", HungarianHeuristic("Euclidean")),
 
-                   ("Small Q-Learning", QLearningHeuristic ("./qlearning_weights/convolution_network_1.torch",
+                   ("Small Q-Learning", QLearningHeuristic ("./qlearning_weights/convolution_network_3.torch",
                                                             max_size=32,
                                                             cuda=False,
                                                             full_input=False)),
