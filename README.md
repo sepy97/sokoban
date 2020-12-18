@@ -23,6 +23,7 @@ In order to run the search algorithms, you will need the following libraries.
 - [fastdist](https://pypi.org/project/fastdist/)
 - [PyTorch](https://pytorch.org/get-started/locally/)
 - CUDA (Optional but makes DQN much faster)
+- [TorchSpread](https://github.com/Alexanders101/TorchSpread) (Optional for training networks)
 
 Run `source environment.sh` in the main directory in order to be able to use all of the python features from anywhere.
 

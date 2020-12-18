@@ -1,13 +1,12 @@
-from typing import List, Union, Tuple
 from glob import glob
+from typing import List, Union, Tuple
 
 import numpy as np
-
-from sokoban.environment import SokobanState, states_to_numpy
-
 import torch
 from torch import nn
 from torch.nn import functional as F
+
+from sokoban.environment import SokobanState, states_to_numpy
 
 
 class ConvolutionBlock(nn.Module):
@@ -124,7 +123,8 @@ class SokobanEnvironment:
     def num_actions_max(self):
         return 4
 
-    def next_state(self, states: List[SokobanState], actions: Union[List[int], np.ndarray]) -> Tuple[List[SokobanState], List[float]]:
+    def next_state(self, states: List[SokobanState], actions: Union[List[int], np.ndarray]) -> Tuple[
+        List[SokobanState], List[float]]:
         new_states = [state.next_state(action) for state, action in zip(states, actions)]
         transition_costs = np.ones(len(states), np.float32)
 
@@ -141,7 +141,8 @@ class SokobanEnvironment:
         return [SokobanState.generate(str(file), num, 0)
                 for file, num in zip(wall_files, num_targets)]
 
-    def generate_states(self, num_states: int, backwards_range: Tuple[int, int]) -> Tuple[List[SokobanState], List[int]]:
+    def generate_states(self, num_states: int, backwards_range: Tuple[int, int]) -> Tuple[
+        List[SokobanState], List[int]]:
         wall_files = np.random.choice(self.wall_files, size=num_states)
         num_targets = np.random.randint(self.min_targets, self.max_targets + 1, size=num_states)
         steps = np.random.randint(backwards_range[0], backwards_range[1] + 1, size=num_states)
@@ -186,4 +187,3 @@ class SokobanEnvironment:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
-

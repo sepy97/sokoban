@@ -16,9 +16,7 @@ class OrderedReplayBuffer(BufferRing):
     def __init__(self,
                  state_shapes: ShapeBufferType,
                  state_types: DtypeBufferType,
-                 max_size: int,
-                 alpha: float = 0.6,
-                 beta: float = 0.4):
+                 max_size: int):
         """ A ring buffer for storing a prioritized replay buffer. Used for Deep Q Learning.
 
         Parameters
@@ -29,10 +27,6 @@ class OrderedReplayBuffer(BufferRing):
             The types of a single state as a buffer
         max_size: int
             Maximum number of unique samples to hold in this buffer.
-        alpha: float
-            Prioritized Experience Replay alpha parameter
-        beta: float
-            Prioritized Experience Replay beta parameter
         """
         buffer_shapes = {
             "states": state_shapes,
@@ -58,9 +52,6 @@ class OrderedReplayBuffer(BufferRing):
 
         super(OrderedReplayBuffer, self).__init__(buffer_shapes, buffer_types, max_size)
 
-        self.alpha = alpha
-        self.beta = beta
-
         self.max_priority = mp.Value(ctypes.c_float, lock=False)
         self.max_priority.value = 1.0
         self.current_sample_index = 0
@@ -69,12 +60,6 @@ class OrderedReplayBuffer(BufferRing):
     def priorities(self) -> np.ndarray:
         current_size = self.size
         return self.buffer[:current_size]('priorities').numpy()
-
-    def update_priority(self, idx: np.ndarray, delta: Tensor):
-        return
-
-    def update_max_priority(self):
-        return
 
     def reset(self):
         super(OrderedReplayBuffer, self).reset()
