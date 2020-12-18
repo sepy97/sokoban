@@ -62,7 +62,7 @@ def main(map: str, setup: int):
     print("-" * 80)
     t0 = time()
 
-    if "Largest Q-Learning" in name:
+    if "Large Q-Learning" in name:
         print("Running Batch A* Search")
         states, actions = BatchAstar(state, heuristic, batch_size=512, weight=10)
     else:
