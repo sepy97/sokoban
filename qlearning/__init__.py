@@ -1,6 +1,5 @@
 from qlearning.qlearning import EpsilonGreedyClient, DQNNetwork, dqn_target
 from qlearning.parameters import Parameters
 from qlearning.transition_collector import TransitionCollector
-from qlearning.gbfs_evaluator import GBFSEvaluator
 from qlearning.output_manager import OutputManager
 from qlearning.sokoban_environment import SokobanEnvironment

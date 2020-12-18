@@ -164,14 +164,6 @@ class SokobanEnvironment:
     def get_nnet_model(self) -> nn.Module:
         return SokobanNetwork()
 
-    def serialize_states(self, states: List[SokobanState]):
-        """ Convert state objects into a form that can be pickled. """
-        return states
-
-    def deserialize_states(self, states) -> List[SokobanState]:
-        """ Convert the serialized state back to proper states. """
-        return states
-
     def state_information(self):
         """ Get the shape shape information for this environment.
             Feel free to overwrite with a more efficient option.

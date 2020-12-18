@@ -43,11 +43,6 @@ class TransitionWorker(mp_ctx.Process):
         """ Queue up dynamically generated transition collection. """
         request_queue.put((TransitionWorker.COLLECT, n_step, batch_size, backwards_range))
 
-    @staticmethod
-    def queue_from_file(request_queue, n_step: int, batch_size, load_directory: str):
-        """ Queue up loaded transitions from a file. """
-        request_queue.put((TransitionWorker.COLLECT, n_step, batch_size, load_directory))
-
     def shutdown(self):
         self.request_queue.put((self.KILL,))
 
@@ -105,7 +100,6 @@ class TransitionWorker(mp_ctx.Process):
             "distances": torch.as_tensor(distances, dtype=torch.float32),
             "actions": torch.as_tensor(initial_actions, dtype=torch.int64),
             "terminals": torch.as_tensor(terminals, dtype=torch.uint8),
-            "priorities": torch.zeros(batch_size, dtype=torch.float32),
             "discounts": torch.as_tensor(discounts, dtype=torch.float32),
             "discount_costs": torch.as_tensor(discount_costs, dtype=torch.float32)
         }
@@ -230,13 +224,8 @@ class TransitionCollector:
         if self.workers is None:
             raise AssertionError("Cannot collect until collector is started.")
 
-        # Setup input: We can either load from a file or generate fresh states
-        if isinstance(backwards_range, str):
-            queue_method = TransitionWorker.queue_from_file
-        else:
-            queue_method = TransitionWorker.queue
-            if not isinstance(backwards_range, (list, tuple)):
-                backwards_range = (0, backwards_range)
+        if not isinstance(backwards_range, (list, tuple)):
+            backwards_range = (0, backwards_range)
 
         # Optionally clear the buffer
         if clear_buffer:
@@ -248,7 +237,7 @@ class TransitionCollector:
             for start_state in range(0, num_states, worker_batch_size):
                 end_state = min(num_states, start_state + worker_batch_size)
                 current_batch_size = end_state - start_state
-                queue_method(self.request_queue, n_step, current_batch_size, backwards_range)
+                TransitionWorker.queue(self.request_queue, n_step, current_batch_size, backwards_range)
 
             # Wait for all of the workers to finish
             self.request_queue.join()

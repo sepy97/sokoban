@@ -1,10 +1,9 @@
-import ctypes
-from typing import Tuple, Union
+from typing import Tuple
 
 import numpy as np
 import torch
 from torch import nn, Tensor
-from torch_spread import NetworkClient, mp_ctx as mp
+from torch_spread import NetworkClient
 from torch_spread.buffer import Buffer, raw_buffer_and_size, ShapeBufferType, DtypeBufferType
 from torch_spread.buffer_queue import BufferRing
 
@@ -17,24 +16,12 @@ class OrderedReplayBuffer(BufferRing):
                  state_shapes: ShapeBufferType,
                  state_types: DtypeBufferType,
                  max_size: int):
-        """ A ring buffer for storing a prioritized replay buffer. Used for Deep Q Learning.
-
-        Parameters
-        ----------
-        state_shapes: Buffer Shape
-            The shapes of a single state as a buffer
-        state_types: Buffer Type
-            The types of a single state as a buffer
-        max_size: int
-            Maximum number of unique samples to hold in this buffer.
-        """
         buffer_shapes = {
             "states": state_shapes,
             "results": state_shapes,
             "distances": tuple(),
             "actions": tuple(),
             "terminals": tuple(),
-            "priorities": tuple(),
             "discounts": tuple(),
             "discount_costs": tuple(),
         }
@@ -45,15 +32,12 @@ class OrderedReplayBuffer(BufferRing):
             "distances": torch.float32,
             "actions": torch.int64,
             "terminals": torch.uint8,
-            "priorities": torch.float32,
             "discounts": torch.float32,
             "discount_costs": torch.float32,
         }
 
         super(OrderedReplayBuffer, self).__init__(buffer_shapes, buffer_types, max_size)
 
-        self.max_priority = mp.Value(ctypes.c_float, lock=False)
-        self.max_priority.value = 1.0
         self.current_sample_index = 0
 
     @property
@@ -63,14 +47,10 @@ class OrderedReplayBuffer(BufferRing):
 
     def reset(self):
         super(OrderedReplayBuffer, self).reset()
-        self.max_priority.value = 1.0
         self.current_sample_index = 0
 
     def put(self, buffer, size: int = None):
         buffer, size = raw_buffer_and_size(buffer, size)
-
-        # Compute the priority for an incoming sample
-        buffer['priorities'][:] = self.max_priority.value
 
         # Put it into the buffer
         super(OrderedReplayBuffer, self).put(buffer, size)
@@ -90,16 +70,6 @@ class OrderedReplayBuffer(BufferRing):
 
 class EpsilonGreedyClient(NetworkClient):
     def __init__(self, config: dict, batch_size: int, epsilon: float):
-        """ An extension to the regular NetworkClient that provides Q-learning policy functions.
-        Parameters
-        ----------
-        config: dict
-            Client configuration from the network manager.
-        batch_size: int
-            Maximum number of states you're planning on predicting at once.
-        epsilon: float
-            Probability of performing a random action
-        """
         super().__init__(config, batch_size)
         self.epsilon = epsilon
 
@@ -112,8 +82,13 @@ class EpsilonGreedyClient(NetworkClient):
 
         return predictions
 
+    def sample_actions_with_batching(self, states) -> np.ndarray:
+        """ Sample many actions at once, support for more states than batch size. """
+        q_values = self.predict_with_batching(states)
+        return self.q_values_to_action(q_values)
+
     @staticmethod
-    def _greedy_actions(q_values: Tensor) -> np.ndarray:
+    def greedy_actions(q_values: Tensor) -> np.ndarray:
         # noinspection PyUnresolvedReferences
         greedy_actions = q_values.min(dim=1).indices
         return greedy_actions.numpy()
@@ -122,7 +97,7 @@ class EpsilonGreedyClient(NetworkClient):
         num_states, num_actions = q_values.shape
 
         # Take the action with the minimum cost to go as greedy
-        greedy_actions = self._greedy_actions(q_values)
+        greedy_actions = self.greedy_actions(q_values)
 
         # Generate random actions
         random_actions = np.random.randint(low=0, high=num_actions, size=num_states, dtype=greedy_actions.dtype)
@@ -131,30 +106,6 @@ class EpsilonGreedyClient(NetworkClient):
         epsilons = np.random.rand(num_states)
         epsilons = (epsilons < self.epsilon).astype(np.int64)
         return np.choose(epsilons, (greedy_actions, random_actions))
-
-    def greedy_actions(self, states) -> np.ndarray:
-        q_values = self.predict(states)
-        return self._greedy_actions(q_values)
-
-    def sample_actions(self, states) -> np.ndarray:
-        """ Sample many actions at once (for vectorized environment). """
-        q_values = self.predict(states)
-        return self.q_values_to_action(q_values)
-
-    def greedy_action_with_batching(self,
-                                    states,
-                                    return_values: bool = False) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
-        q_values = self.predict_with_batching(states)
-        greedy_actions = self._greedy_actions(q_values)
-        if return_values:
-            return greedy_actions, q_values.min(dim=1).values.numpy()
-        else:
-            return greedy_actions
-
-    def sample_actions_with_batching(self, states) -> np.ndarray:
-        """ Sample many actions at once, support for more states than batch size. """
-        q_values = self.predict_with_batching(states)
-        return self.q_values_to_action(q_values)
 
 
 class DQNNetwork(nn.Module):

@@ -39,15 +39,15 @@ class Parameters(Namespace):
         self.simulation_workers: int = 16
 
         # How many states a single collection worker will simulate at once
-        self.simulation_batch_size: int = 512
+        self.simulation_batch_size: int = 64
 
         # How many states a single collection worker will send to the networks at once
-        self.simulation_network_batch_size: int = 512
+        self.simulation_network_batch_size: int = 64
 
         # Total Number of states to process during collection.
         # Workers will collected 'simulation_batch_size' states at a time.
         # Enqueued sequentially.
-        self.simulation_states: int = 16 * self.simulation_batch_size * self.simulation_workers
+        self.simulation_states: int = 8 * self.simulation_batch_size * self.simulation_workers
 
         # Total batch size for each worker network
         # Default is optimized to allocate networks evenly
@@ -61,7 +61,7 @@ class Parameters(Namespace):
 
         # Batch size during network training.
         # If using multiple gpus, then this will be spread across the gpus.
-        self.training_batch_size: int = 512
+        self.training_batch_size: int = 64
 
         # Number of states to train on after collection.
         # If clearing the buffer, then this should probably be the number of collected states.

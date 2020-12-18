@@ -8,7 +8,7 @@ import torch
 from torch import optim
 from tqdm import tqdm
 
-from qlearning import DQNNetwork, TransitionCollector, GBFSEvaluator, Parameters, OutputManager, dqn_target, SokobanEnvironment
+from qlearning import DQNNetwork, TransitionCollector, Parameters, OutputManager, dqn_target, SokobanEnvironment
 from torch_spread import NetworkManager, PlacementStrategy, DataParallelWrapper, TrainingWrapper
 
 
@@ -88,15 +88,9 @@ def numpy_to_torch_type(dtype):
     return {
         np.bool: torch.bool,
         np.uint8: torch.uint8,
-        np.int8: torch.int8,
-        np.int16: torch.int16,
         np.int32: torch.int32,
         np.int64: torch.int64,
-        np.float16: torch.float16,
         np.float32: torch.float32,
-        np.float64: torch.float64,
-        np.complex64: torch.complex64,
-        np.complex128: torch.complex128,
         np.dtype('uint8'): torch.uint8,
         np.dtype('int32'): torch.int32,
         np.dtype('bool'): torch.bool,
@@ -135,16 +129,12 @@ def main(parameters: Optional[str], generate: Optional[str], override: bool):
                              network_args=[],
                              placement=placement,
                              training_wrapper=training_wrapper,
-                             num_worker_buffers=2,
-                             worker_amp=True)
+                             num_worker_buffers=2)
 
     # Manages the parallel collection workers and replay buffer
     collector = TransitionCollector(hparams, manager.client_config)
 
-    # Manages the parallel testing workers for network evaluation
-    evaluator = GBFSEvaluator(hparams, manager.client_config)
-
-    with manager, collector, evaluator:
+    with manager, collector:
         # Load any previous weights if they exist from a previous run
         initial_iteration = output_manager.load_weights(manager)
 
@@ -222,7 +212,6 @@ def main(parameters: Optional[str], generate: Optional[str], override: bool):
                         optimizer.step()
 
                         # Update persistent variables
-                        replay_buffer.update_priority(sample_index, delta)
                         average_loss += loss.item()
 
                     average_loss = average_loss / (batch + 1)
@@ -230,7 +219,6 @@ def main(parameters: Optional[str], generate: Optional[str], override: bool):
                 output_manager.print_value("Total Training States", num_trained_states, start='\n')
                 output_manager.print_value("Latest Loss", average_loss)
 
-                # if average_loss < hparams.loss_threshold:
                 if (iteration % hparams.target_update_iterations) == 0:
                     print("Updating Target Network")
                     target_state_dict = target_network.state_dict()
@@ -244,25 +232,7 @@ def main(parameters: Optional[str], generate: Optional[str], override: bool):
                     target_network.load_state_dict(new_target_state_dict)
 
                 output_manager.save_weights(manager, iteration)
-                replay_buffer.update_max_priority()
                 initial_iteration = False
-
-            # -------------------------------------------------------------------------------------
-            # Testing
-            # -------------------------------------------------------------------------------------
-            if (iteration % hparams.testing_iterations) == 0:
-                output_manager.print_with_border(f"Evaluation")
-                # Perform an evaluation run
-                test_results = evaluator.evaluate(hparams.testing_states, hparams.testing_max_steps)
-                display_indices = np.round(np.linspace(0, hparams.testing_max_steps, 10)).astype(np.int64)
-                display_indices = np.unique(display_indices)
-
-                test_results = [result[display_indices] for result in test_results]
-                for distance, solved, steps, costs in zip(display_indices, *test_results):
-                    print(f"Solved {100 * solved:.2f}% of states of distance {distance}.", end=' ')
-                    print(f"Average steps taken: {steps:.2f}.", end=' ')
-                    print(f"Average cost to go: {costs:.2f}")
-                print()
 
 
 if __name__ == '__main__':
