@@ -36,15 +36,15 @@ def main(map: str, setup: int):
                    ("Manhattan Hungarian", HungarianHeuristic("Manhattan")),
                    ("Euclidean Hungarian", HungarianHeuristic("Euclidean")),
 
-                   ("Small Q-Learning", QLearningHeuristic ("./qlearning_weights/convolution_network_4.torch",
-                                                            max_size=48,
+                   ("Small Q-Learning", QLearningHeuristic ("./qlearning_weights/convolution_network_1.torch",
+                                                            max_size=32,
                                                             cuda=False,
                                                             full_input=False)),
 
-                   ("Largest Q-Learning", QLearningHeuristic("./qlearning_weights/convolution_network_5.torch",
-                                                             max_size=48,
-                                                             full_input=True,
-                                                             cuda=cuda))
+                   ("Large Q-Learning", QLearningHeuristic("./qlearning_weights/convolution_network_5.torch",
+                                                           max_size=48,
+                                                           full_input=True,
+                                                           cuda=cuda))
     ]
 
 
