@@ -1,19 +1,12 @@
 from .base import BaseHeuristic
-from sokoban.environment import SokobanState, states_to_numpy
+from sokoban.environment import SokobanState, states_to_numpy, states_to_numpy_partial
 
 from typing import List
 import numpy as np
 
 
-def split_range(size: int):
-        if size % 2 == 0:
-            return size // 2, size // 2
-        else:
-            return size // 2, size // 2 + 1
-
-
 class QLearningHeuristic(BaseHeuristic):
-    def __init__(self, torch_file: str, max_size: int = 32, cuda: bool = False):
+    def __init__(self, torch_file: str, max_size: int = 32, full_input: bool = True, cuda: bool = False):
         super(QLearningHeuristic, self).__init__()
 
         import torch
@@ -22,28 +15,36 @@ class QLearningHeuristic(BaseHeuristic):
         if cuda:
             self.network = self.network.cuda()
 
+        self.full_input = full_input
         self.max_size = max_size
         self.torch = torch
         self.cuda = cuda
 
-    def state_to_nnet_input(self, state):
-        state = np.pad(state.map, list(map(split_range, self.max_size - np.array(state.map.shape))), constant_values=4)
-        state = self.torch.from_numpy(state)
-        return state.unsqueeze(0)
-
     def __call__(self, state: SokobanState) -> float:
-        return self.network(self.state_to_nnet_input(state)).min().item()
+        if self.full_input:
+            states = states_to_numpy(np.array([state]), self.max_size, 0)
+        else:
+            states = [states_to_numpy_partial(np.array([state]), self.max_size)]
 
-    def batch_call(self, states: List[SokobanState]) -> List[float]:
-        # states = self.torch.stack([self.state_to_nnet_input(state).squeeze() for state in states])
-        states = states_to_numpy(states, self.max_size)
-        states = self.torch.from_numpy(states)
+        states = [self.torch.from_numpy(x) for x in states]
 
         if self.cuda:
-            states = states.cuda()
+            states = [x.cuda() for x in states]
 
-        heuristics =  self.network(states).min(1).values
+        return self.network(*states).min().item()
+
+    def batch_call(self, states: List[SokobanState]) -> List[float]:
+        if self.full_input:
+            states = states_to_numpy(states, self.max_size, 0)
+        else:
+            states = states_to_numpy_partial(states, self.max_size)
+
+        states = [self.torch.from_numpy(x) for x in states]
+
+        if self.cuda:
+            states = [x.cuda() for x in states]
+
+        heuristics = self.network(*states).min(1).values
         heuristics = heuristics.cpu().numpy()
 
         return heuristics
-        

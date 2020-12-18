@@ -260,7 +260,60 @@ cpdef SokobanState[::1] parallel_expand(SokobanState[::1] states):
     return np.array([SokobanState.from_state(output[i], solved[i]) for i in range(4 * states.shape[0])])
 
 
-cdef void _states_to_numpy(vector[sokoban*] states, uint8_t[:, :, ::1] output, uint64_t size) nogil:
+cdef void _states_to_numpy(vector[sokoban*] states, 
+                           uint8_t[:, :, ::1] output, 
+                           int32_t[:, :, ::1] targets, 
+                           int32_t[:, :, ::1] boxes,
+                           bool[:, ::1] target_mask,
+                           uint64_t size) nogil:
+    cdef uint64_t i, j, k, x_offset, y_offset
+    cdef sokoban* state
+    cdef uint8_t* state_buffer
+    cdef int32_t* boxes_buffer, *target_buffer
+
+    for i in prange(states.size()):
+        state = states[i]
+        state_buffer = <uint8_t*> state.map.data()
+        boxes_buffer = <int32_t*> state.boxes.data()
+        target_buffer = <int32_t*> state.targets.data()
+
+        x_offset = (size - state.dim.x) // 2
+        y_offset = (size - state.dim.y) // 2
+        for j in range(state.dim.x):
+            for k in range(state.dim.y):
+                output[i, y_offset + k, x_offset + j] = state_buffer[k * state.dim.x + j]
+
+        for j in range(state.boxes.size()):
+            targets[i, j, 0] = target_buffer[2 * j + 0]
+            targets[i, j, 1] = target_buffer[2 * j + 1]
+
+            boxes[i, j, 0] = boxes_buffer[2 * j + 0]
+            boxes[i, j, 1] = boxes_buffer[2 * j + 1]
+
+            target_mask[i, j] = False
+
+
+cpdef states_to_numpy(SokobanState[::1] states, uint64_t size, uint64_t max_targets):
+    cdef vector[sokoban*] _states
+    cdef uint64_t current_targets
+    
+    for i in range(states.shape[0]):
+        _states.push_back(states[i]._state)
+        current_targets = states[i]._state.targets.size()
+        if current_targets > max_targets:
+            max_targets = current_targets
+
+    cdef uint8_t[:, :, ::1] output = np.full((_states.size(), size, size), 4, np.uint8) 
+    cdef int32_t[:, :, ::1] targets = np.full((_states.size(), max_targets, 2), 0, np.int32) 
+    cdef int32_t[:, :, ::1] boxes = np.full((_states.size(), max_targets, 2), 0, np.int32) 
+    cdef bool[:, ::1] target_mask = np.full((_states.size(), max_targets), True, np.bool) 
+
+    _states_to_numpy(_states, output, targets, boxes, target_mask, size)
+
+    return np.asarray(output), np.asarray(targets), np.asarray(boxes), np.asarray(target_mask)
+
+
+cdef void _states_to_numpy_partial(vector[sokoban*] states, uint8_t[:, :, ::1] output, uint64_t size) nogil:
     cdef uint64_t i, j, k, x_offset, y_offset
     cdef sokoban* state
     cdef uint8_t* state_buffer
@@ -278,14 +331,14 @@ cdef void _states_to_numpy(vector[sokoban*] states, uint8_t[:, :, ::1] output, u
                 output[i, y_offset + k, x_offset + j] = state_buffer[k * state.dim.x + j]
 
 
-cpdef states_to_numpy(SokobanState[::1] states, uint64_t size):
+cpdef states_to_numpy_partial(SokobanState[::1] states, uint64_t size):
     cdef vector[sokoban*] _states
     for i in range(states.shape[0]):
         _states.push_back(states[i]._state)
 
     cdef uint8_t[:, :, ::1] output = np.full((_states.size(), size, size), 4, np.uint8)
 
-    _states_to_numpy(_states, output, size)
+    _states_to_numpy_partial(_states, output, size)
 
     return np.asarray(output)
 

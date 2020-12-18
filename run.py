@@ -1,14 +1,14 @@
-from glob import glob
-from time import time
-from random import choice
-
 import os
-os.environ['KMP_DUPLICATE_LIB_OK']='True'
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
+from time import time
 from argparse import ArgumentParser
 
-from sokoban import SokobanState, Astar
-from sokoban.heuristics import GreedyHeuristic, ManhattanHeuristic, EuclidHeuristic, HungarianHeuristic, QLearningHeuristic
+import torch
+
+from sokoban import SokobanState, Astar, BatchAstar
+from sokoban.heuristics import ManhattanHeuristic, EuclidHeuristic, HungarianHeuristic, QLearningHeuristic
+
 
 def action_to_string(action):
     if action == 0:
@@ -20,36 +20,64 @@ def action_to_string(action):
     elif action == 3:
         return "L"
 
-def main(maps: str, setup: int, timing: int):
-    #walls = glob(f"{wall}/*.txt")
 
-    state = SokobanState.load (maps) #generate(wall, num_targets=targets, num_steps=steps)
+def main(map: str, setup: int):
+    if torch.cuda.is_available():
+        print("Cuda found. Running DQN network on GPU.")
+        cuda = True
+    else:
+        print("Cuda not found. Running DQN network on CPU. This will be much slower.")
+        cuda = False
 
-    heuristics = [      ManhattanHeuristic () ,             # greedy manhattan
-                        EuclidHeuristic ()  ,               # greedy euclid
-                        HungarianHeuristic ("Manhattan") ,  # hungarian manhattan
-                        HungarianHeuristic ("Euclidean") ,  # hungarian euclid
-                        QLearningHeuristic ("./qlearning_weights/convolution_network_1.torch"), # QLearning
-    ]  
+    state = SokobanState.load(map)
 
-    measured_time = 0
-    
+    heuristics = [ ("Manhattan Greedy", ManhattanHeuristic()),
+                   ("Euclidean Greedy", EuclidHeuristic ()),
+                   ("Manhattan Hungarian", HungarianHeuristic("Manhattan")),
+                   ("Euclidean Hungarian", HungarianHeuristic("Euclidean")),
+
+                   ("Small Q-Learning", QLearningHeuristic ("./qlearning_weights/convolution_network_4.torch",
+                                                            max_size=48,
+                                                            cuda=False,
+                                                            full_input=False)),
+
+                   ("Largest Q-Learning", QLearningHeuristic("./qlearning_weights/convolution_network_5.torch",
+                                                             max_size=48,
+                                                             full_input=True,
+                                                             cuda=cuda))
+    ]
+
+
+    print("=" * 80)
+    print(f"Running Sokoban file: {map}")
+    print("-" * 80)
+    state.display()
+    print("-" * 80)
+
+    name, heuristic = heuristics[setup - 1]
+
+    print()
+    print("-" * 80)
+    print(f"Using Heuristic: {name}")
+    print("-" * 80)
     t0 = time()
-    states, actions = Astar (state, heuristics[setup-1])
+
+    if "Largest Q-Learning" in name:
+        print("Running Batch A* Search")
+        states, actions = BatchAstar(state, heuristic, batch_size=512, weight=10)
+    else:
+        print("Running A* Search")
+        states, actions = Astar(state, heuristic)
+
     t1 = time()
+    print(f"Runtime: {t1 - t0} seconds")
+    print(f"Solution Length {len(actions)}")
 
-    measured_time = 1000 * (t1 - t0)
-
-    print (str (len (actions)), ' '.join(map(action_to_string, actions)))
-    # str(actions))
-    if timing == 1:
-        print ("Execution time: ", measured_time)
 
 if __name__ == "__main__":
     parser = ArgumentParser()
 
-    parser.add_argument('-m', "--maps", type=str, default='./test_walls/sokoban01.txt', help="Directory with map files.")
-    parser.add_argument('-s', "--setup", type=int, default=5, help="Heuristic to choose (from 1 to 5).")
-    parser.add_argument('-t', "--timing", type=int, default=0, help="Timing is on (1) or off (0).")
-    
+    parser.add_argument('-m', "--map", type=str, default='./sokoban_benchmarks/sokoban01.txt', help="Map file to test on.")
+    parser.add_argument('-s', "--setup", type=int, default=5, help="Heuristic to choose (from 1 to 6).")
+
     main(**parser.parse_args().__dict__)

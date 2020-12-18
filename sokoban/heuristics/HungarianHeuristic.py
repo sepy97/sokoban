@@ -1,11 +1,12 @@
 from .base import BaseHeuristic
 from sokoban.environment import SokobanState
 from sokoban.heuristics.hungarian import Hungarian
-from fastdist import fastdist
 import numpy as np
 
 def getDistances(metrics, box, target):
 	from scipy.spatial import distance
+	from fastdist import fastdist
+
 	if metrics == 'Manhattan':
 		return distance.cityblock(box, target)
 	elif metrics == 'Euclidean':
