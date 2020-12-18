@@ -13,7 +13,7 @@ def action_to_string(action):
         return "L"
 
 if __name__ == "__main__":
-    state = SokobanState.load("./sokoban01.txt")
+    state = SokobanState.load("./test_walls/sokoban07a.txt")
     #heuristic = GreedyHeuristic()
     heuristic = ManhattanHeuristic()
     #heuristic = EuclidHeuristic()
@@ -29,10 +29,11 @@ if __name__ == "__main__":
     t1 = time()
     print("Solution Found!")
     print("-" * 70)
+    print (len (actions))
     print(f"Actions: {' '.join(map(action_to_string, actions))}")
     print(f"Time taken: {1000 * (t1 - t0)} ms.")
 
-    input("Press enter to display the solution as a sequence of states.")
-    for state in states:
-        state.display()
+    #input("Press enter to display the solution as a sequence of states.")
+    #for state in states:
+    #    state.display()
     # print(Astar(state, heuristic))

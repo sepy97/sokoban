@@ -2,6 +2,9 @@ from glob import glob
 from time import time
 from random import choice
 
+import os
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
+
 from argparse import ArgumentParser
 
 from sokoban import SokobanState, Astar
@@ -20,11 +23,14 @@ def action_to_string(action):
 def main(walls: str, targets: int, steps: int):
     walls = glob(f"{walls}/*.txt")
 
-    state = SokobanState.generate(choice(walls), num_targets=targets, num_steps=steps)
+    #state = SokobanState.generate(choice(walls), num_targets=targets, num_steps=steps)
+
+    state = SokobanState.load("./test_walls/sokoban07b.txt")
 
     heuristic = QLearningHeuristic("./qlearning_weights/convolution_network_1.torch")
     # heuristic = HungarianHeuristic("Manhattan")
-    # heuristic = ManhattanHeuristic()
+    
+    #heuristic = ManhattanHeuristic()
 
     print("Initial State")
     print("-" * 70)

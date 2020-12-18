@@ -51,7 +51,7 @@ def Astar(start: SokobanState, heuristic: BaseHeuristic) -> Optional[TPath]:
         num_of_moves += 1
         
         if state.solved:
-            print(f"States explored: {len(parents)}")
+            #print(f"States explored: {len(parents)}")
             return Astar_path(start, state, parents)
 
         children = state.expand()

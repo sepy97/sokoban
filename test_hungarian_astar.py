@@ -13,7 +13,7 @@ def action_to_string(action):
         return "L"
 
 if __name__ == "__main__":
-    state = SokobanState.load("./sokoban01.txt")
+    state = SokobanState.load("./test_walls/sokoban04.txt")
     
     #heuristic = HungarianHeuristic('Manhattan')
     heuristic = HungarianHeuristic('Euclidean')

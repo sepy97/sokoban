@@ -20,10 +20,10 @@ def action_to_string(action):
     elif action == 3:
         return "L"
 
-def main(wall: str, targets: int, steps: int):
+def main(maps: str, setup: int, timing: int):
     #walls = glob(f"{wall}/*.txt")
 
-    state = SokobanState.load (wall) #generate(wall, num_targets=targets, num_steps=steps)
+    state = SokobanState.load (maps) #generate(wall, num_targets=targets, num_steps=steps)
 
     heuristics = [      ManhattanHeuristic () ,             # greedy manhattan
                         EuclidHeuristic ()  ,               # greedy euclid
@@ -32,25 +32,24 @@ def main(wall: str, targets: int, steps: int):
                         QLearningHeuristic ("./qlearning_weights/convolution_network_1.torch"), # QLearning
     ]  
 
-    times = [0,0,0,0,0]
+    measured_time = 0
     
-    for i in range (5):
-        t0 = time()
-        states, actions = Astar (state, heuristics[i])
-        t1 = time()
+    t0 = time()
+    states, actions = Astar (state, heuristics[setup-1])
+    t1 = time()
 
-        times[i] = 1000 * (t1 - t0)
+    measured_time = 1000 * (t1 - t0)
 
-    print ("executed successfully!")
-
-    for i in range (5):
-        print (times[i])
+    print (str (len (actions)), ' '.join(map(action_to_string, actions)))
+    # str(actions))
+    if timing == 1:
+        print ("Execution time: ", measured_time)
 
 if __name__ == "__main__":
     parser = ArgumentParser()
 
-    parser.add_argument('-w', "--wall", type=str, default='./walls/0000.txt', help="Directory with special wall files.")
-    parser.add_argument('-t', "--targets", type=int, default=2, help="Number of targets to generate.")
-    parser.add_argument('-s', "--steps", type=int, default=10_000, help="Number of steps to take when generating.")
-
+    parser.add_argument('-m', "--maps", type=str, default='./test_walls/sokoban01.txt', help="Directory with map files.")
+    parser.add_argument('-s', "--setup", type=int, default=5, help="Heuristic to choose (from 1 to 5).")
+    parser.add_argument('-t', "--timing", type=int, default=0, help="Timing is on (1) or off (0).")
+    
     main(**parser.parse_args().__dict__)

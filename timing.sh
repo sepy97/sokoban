@@ -1,11 +1,16 @@
-python3 experiments.py -w ./walls/0500.txt -t 2 -s 10000 >> timing_t2_11.txt
-python3 experiments.py -w ./walls/0503.txt -t 2 -s 10000 >> timing_t2_14.txt
-python3 experiments.py -w ./walls/0501.txt -t 2 -s 10000 >> timing_t2_17.txt
-python3 experiments.py -w ./walls/0504.txt -t 2 -s 10000 >> timing_t2_20.txt
-python3 experiments.py -w ./walls/0502.txt -t 2 -s 10000 >> timing_t2_23.txt
+#python3 experiments.py -w ./test_walls/sokoban00.txt >> timing_bench_00.txt
+#python3 experiments.py -w ./test_walls/sokoban01.txt >> timing_bench_01.txt
+#python3 experiments.py -w ./test_walls/sokoban02.txt >> timing_bench_02.txt
+#python3 experiments.py -w ./test_walls/sokoban03.txt >> timing_bench_03.txt
+#python3 experiments.py -w ./test_walls/sokoban04.txt >> timing_bench_04.txt
+#python3 experiments.py -w ./test_walls/sokoban05a.txt >> timing_bench_05a.txt
+#python3 experiments.py -w ./test_walls/sokoban05b.txt >> timing_bench_05b.txt
+#python3 experiments.py -w ./test_walls/sokoban06a.txt >> timing_bench_06a.txt
+#python3 experiments.py -w ./test_walls/sokoban06b.txt >> timing_bench_06b.txt
+#python3 experiments.py -w ./test_walls/sokoban06c.txt >> timing_bench_06c.txt
+#python3 experiments.py -w ./test_walls/sokoban07a.txt >> timing_bench_07a.txt
+#python3 experiments.py -w ./test_walls/sokoban07b.txt >> timing_bench_07b.txt
+python3 experiments.py -w ./test_walls/sokoban08.txt >> timing_bench_08.txt
+python3 experiments.py -w ./test_walls/sokoban09.txt >> timing_bench_09.txt
+python3 experiments.py -w ./test_walls/sokoban10.txt >> timing_bench_10.txt
 
-python3 experiments.py -w ./walls/0500.txt -t 3 -s 10000 >> timing_t3_11.txt
-python3 experiments.py -w ./walls/0503.txt -t 3 -s 10000 >> timing_t3_14.txt
-python3 experiments.py -w ./walls/0501.txt -t 3 -s 10000 >> timing_t3_17.txt
-python3 experiments.py -w ./walls/0504.txt -t 3 -s 10000 >> timing_t3_20.txt
-python3 experiments.py -w ./walls/0502.txt -t 3 -s 10000 >> timing_t3_23.txt
